@@ -271,6 +271,95 @@ function autoCorrectRow(row, rowIdx) {
     row.incharge_extension_name = fixed;
   }
 
+  // Allow decimals in numeric fields
+  ['area','no_of_male_employees','no_of_female_employees','no_of_employees_residing_within_the_area','no_of_van','no_of_truck','no_of_motorcycle','monthly_rental'].forEach(f => {
+    orig = v(row, f);
+    if (orig) {
+      let n = orig.replace(/[^\d.-]/g, '');
+      if (n !== '' && !isNaN(n) && n !== orig) {
+        // Keep decimals, but remove extra spaces and ensure proper format
+        fixed = Number(n).toString();
+        if (fixed !== orig) {
+          fixes.push(f + ': "' + orig + '" -> "' + fixed + '"');
+          row[f] = fixed;
+        }
+      }
+    }
+  });
+
+  DATE_FIELDS.forEach(f => {
+    orig = v(row, f);
+    if (orig) {
+      fixed = formatDateStr(orig);
+      if (fixed !== orig) {
+        fixes.push(f + ': "' + orig + '" -> "' + fixed + '"');
+        row[f] = fixed;
+      }
+    }
+  });
+
+  orig = v(row, 'email_address');
+  if (orig) {
+    fixed = orig.trim().toLowerCase();
+    if (fixed !== orig) { fixes.push('email_address: trimmed/lowercased'); row.email_address = fixed; }
+  }
+
+  // Auto-format TIN if it's 12 digits
+  orig = v(row, 'tin_no');
+  if (orig) {
+    let digits = orig.replace(/[^\d]/g, '');
+    if (digits.length === 12) {
+      fixed = digits.substring(0,3) + '-' + digits.substring(3,6) + '-' + digits.substring(6,9) + '-' + digits.substring(9);
+      if (fixed !== orig) {
+        fixes.push('tin_no: formatted as ' + fixed);
+        row.tin_no = fixed;
+      }
+    }
+  }
+
+  return fixes;
+}
+    }
+  }
+
+  orig = v(row, 'incharge_sex');
+  if (orig) {
+    let up = orig.toUpperCase();
+    if (up === 'MALE' || up === 'M') fixed = 'M';
+    else if (up === 'FEMALE' || up === 'F') fixed = 'F';
+    else fixed = up;
+    if (fixed !== orig) { fixes.push('incharge_sex: "' + orig + '" -> "' + fixed + '"'); row.incharge_sex = fixed; }
+  }
+
+  orig = v(row, 'cellphone_no');
+  if (orig) {
+    let digits = orig.replace(/[^\d]/g, '');
+    if (digits.length > 0) {
+      let fixed_phone = digits;
+      if (digits.startsWith('09') && digits.length === 11) { fixed_phone = '639' + digits.substring(2); fixes.push('cellphone_no: converted 09xx to 639xx'); }
+      else if (digits.startsWith('9') && digits.length === 10) { fixed_phone = '639' + digits.substring(1); fixes.push('cellphone_no: added 63 prefix'); }
+      else if (digits.startsWith('+639') || digits.startsWith('639')) { fixed_phone = digits.replace(/^[\+]?63/, '639'); }
+      else if (digits.startsWith('0') && digits.length === 11) { fixed_phone = '63' + digits.substring(1); fixes.push('cellphone_no: converted 0xx to 63xx'); }
+      if (fixed_phone !== orig) row.cellphone_no = fixed_phone;
+    }
+  }
+
+  orig = v(row, 'location_owned');
+  if (orig) {
+    let lo = orig.toLowerCase().trim();
+    if (lo === 'true' || lo === 'yes' || lo === 'owned' || lo === '1') fixed = '1';
+    else if (lo === 'false' || lo === 'no' || lo === 'rented' || lo === '0') fixed = '0';
+    else fixed = orig;
+    if (fixed !== orig) { fixes.push('location_owned: "' + orig + '" -> "' + fixed + '"'); row.location_owned = fixed; }
+  }
+
+  orig = v(row, 'incharge_extension_name');
+  if (orig && orig.includes('.')) {
+    fixed = orig.replace(/\./g, '');
+    fixes.push('incharge_extension_name: removed periods');
+    row.incharge_extension_name = fixed;
+  }
+
   ['area','no_of_male_employees','no_of_female_employees','no_of_employees_residing_within_the_area','no_of_van','no_of_truck','no_of_motorcycle','monthly_rental'].forEach(f => {
     orig = v(row, f);
     if (orig) {
@@ -312,21 +401,31 @@ function formatRow(row) {
   let loc = v(row,'location_owned').toLowerCase().trim();
   if (['1','true','yes','owned'].includes(loc)) row.location_owned = '1';
   else if (['0','false','no','rented'].includes(loc)) row.location_owned = '0';
-  let phone = v(row,'cellphone_no').replace(/[^\d]/g,'');
+  let phone = v(row,'cellphone_no').replace(/[^\d]/g, '');
   if (phone.startsWith('09') && phone.length === 11) phone = '639' + phone.substring(2);
   else if (phone.startsWith('9') && phone.length === 10) phone = '639' + phone.substring(1);
   else if (phone.startsWith('0') && phone.length === 11) phone = '63' + phone.substring(1);
   row.cellphone_no = phone;
   row.incharge_extension_name = v(row,'incharge_extension_name').replace(/\./g, '');
   ['area','no_of_male_employees','no_of_female_employees','no_of_employees_residing_within_the_area','no_of_van','no_of_truck','no_of_motorcycle','monthly_rental'].forEach(f => {
-    let n = v(row,f).replace(/[^\d.-]/g,'');
-    if (n !== '' && !isNaN(n)) row[f] = Math.floor(Number(n)).toString();
+    let n = v(row,f).replace(/[^\d.-]/g, '');
+    if (n !== '' && !isNaN(n)) row[f] = n;
   });
   DATE_FIELDS.forEach(f => {
     let dt = v(row, f);
     if (dt) row[f] = formatDateStr(dt);
   });
   if (v(row,'email_address')) row.email_address = v(row,'email_address').trim().toLowerCase();
+
+  // Auto-format TIN if it's 12 digits
+  let tin = v(row, 'tin_no');
+  if (tin) {
+    let digits = tin.replace(/[^\d]/g, '');
+    if (digits.length === 12) {
+      row.tin_no = digits.substring(0,3) + '-' + digits.substring(3,6) + '-' + digits.substring(6,9) + '-' + digits.substring(9);
+    }
+  }
+
   return row;
 }
 
@@ -690,6 +789,11 @@ function exportCSV() {
     let out = {};
     headers.forEach(h => {
       let val = row[h] != null ? String(row[h]).trim() : '';
+      // Add leading apostrophe if value starts with '0' and contains non-digit characters
+      if (val && val.startsWith('0') && !/^\d+$/.test(val)) {
+        val = "'" + val;
+      }
+      // For date fields, ensure proper formatting with leading zeros
       if (DATE_FIELDS.includes(h) && val && /^\d{2}\/\d{2}\/\d{4}$/.test(val)) {
         let parts = val.split('/');
         if (parts[0].startsWith('0') || parts[1].startsWith('0')) {

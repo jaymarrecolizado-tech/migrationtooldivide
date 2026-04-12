@@ -156,6 +156,45 @@ function autoCorrectRow(row, rowIdx) {
   ['amount','discount','Interest','Surcharge','total'].forEach(f => {
     orig = v(row, f);
     if (orig) {
+      let n = orig.replace(/[^\d.-]/g, '');
+      if (n !== '' && !isNaN(n) && n !== orig) {
+        fixed = Number(n).toString();
+        if (fixed !== orig) {
+          fixes.push(f + ': "' + orig + '" -> "' + fixed + '"');
+          row[f] = fixed;
+        }
+      }
+    }
+  });
+
+  let amt = v(row, 'amount');
+  let disc = v(row, 'discount');
+  let intr = v(row, 'Interest');
+  let surc = v(row, 'Surcharge');
+  if (amt !== '' && disc !== '' && intr !== '' && surc !== '' &&
+      !isNaN(Number(amt)) && !isNaN(Number(disc)) && !isNaN(Number(intr)) && !isNaN(Number(surc))) {
+    let expected = Number(amt) + Number(surc) + Number(intr) - Number(disc);
+    let currentTotal = v(row, 'total');
+    if (currentTotal === '' || isNaN(Number(currentTotal)) || Math.abs(Number(currentTotal) - expected) > 0.001) {
+      let newVal = Number(expected).toFixed(2);
+      if (newVal === '0.00') newVal = '0';
+      fixes.push('total: auto-corrected to ' + newVal);
+      row.total = newVal;
+    }
+  }
+
+  return fixes;
+}
+
+  orig = v(row, 'code');
+  if (orig) {
+    fixed = orig.replace(/\s+/g, '');
+    if (fixed !== orig) { fixes.push('code: stripped spaces from "' + orig + '" -> "' + fixed + '"'); row.code = fixed; }
+  }
+
+  ['amount','discount','Interest','Surcharge','total'].forEach(f => {
+    orig = v(row, f);
+    if (orig) {
       let n = orig.replace(/[^\d.\-]/g, '');
       if (n !== orig) {
         fixes.push(f + ': "' + orig + '" -> "' + n + '"');
@@ -512,6 +551,10 @@ function exportCSV() {
     let out = {};
     headers.forEach(h => {
       let val = row[h] != null ? String(row[h]).trim() : '';
+      // Add leading apostrophe if value starts with '0' and contains non-digit characters
+      if (val && val.startsWith('0') && !/^\d+$/.test(val)) {
+        val = "'" + val;
+      }
       out[h] = val;
     });
     return out;

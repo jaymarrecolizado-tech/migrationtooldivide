@@ -177,11 +177,65 @@ function autoCorrectRow(row, rowIdx) {
   let fixes = [];
   let orig, fixed;
 
+  // Auto-correct application_type (strip spaces, uppercase)
   orig = v(row, 'application_type');
   if (orig) {
     fixed = orig.replace(/\s+/g, '').toUpperCase();
     if (fixed !== orig) { fixes.push('application_type: "' + orig + '" -> "' + fixed + '"'); row.application_type = fixed; }
   }
+
+  // Auto-correct mode_of_payment (uppercase)
+  orig = v(row, 'mode_of_payment');
+  if (orig) {
+    fixed = orig.trim().toUpperCase();
+    if (fixed !== orig) { fixes.push('mode_of_payment: "' + orig + '" -> "' + fixed + '"'); row.mode_of_payment = fixed; }
+  }
+
+  DATE_FIELDS.forEach(f => {
+    orig = v(row, f);
+    if (orig) {
+      fixed = formatDateStr(orig);
+      if (fixed !== orig) {
+        fixes.push(f + ': "' + orig + '" -> "' + fixed + '"');
+        row[f] = fixed;
+      }
+    }
+  });
+
+  // Auto-correct numeric fields: strip non-digits and allow decimals
+  ['amount','discount','surcharge','interest','total'].forEach(f => {
+    orig = v(row, f);
+    if (orig) {
+      let n = orig.replace(/[^\d.-]/g, '');
+      if (n !== '' && !isNaN(n) && n !== orig) {
+        fixed = Number(n).toString();
+        if (fixed !== orig) {
+          fixes.push(f + ': "' + orig + '" -> "' + fixed + '"');
+          row[f] = fixed;
+        }
+      }
+    }
+  });
+
+  // Auto-calculate total if blank or wrong
+  let amt = v(row, 'amount');
+  let disc = v(row, 'discount');
+  let intr = v(row, 'interest');
+  let sur = v(row, 'surcharge');
+  if (amt !== '' && disc !== '' && intr !== '' && sur !== '' &&
+      !isNaN(Number(amt)) && !isNaN(Number(disc)) && !isNaN(Number(intr)) && !isNaN(Number(sur))) {
+    let expected = Number(amt) + Number(sur) + Number(intr) - Number(disc);
+    let currentTotal = v(row, 'total');
+    if (currentTotal === '' || isNaN(Number(currentTotal)) || Math.abs(Number(currentTotal) - expected) > 0.01) {
+      let newVal = Number(expected).toFixed(2);
+      if (newVal === '0.00') newVal = '0';
+      fixes.push('total: auto-corrected to ' + newVal);
+      row.total = newVal;
+    }
+  }
+
+  return fixes;
+}
 
   orig = v(row, 'mode_of_payment');
   if (orig) {
@@ -585,11 +639,24 @@ function exportCSV() {
     let out = {};
     headers.forEach(h => {
       let val = row[h] != null ? String(row[h]).trim() : '';
-      if (DATE_FIELDS.includes(h) && val && /^\d{2}\/\d{2}\/\d{4}$/.test(val)) {
-        let parts = val.split('/');
-        if (parts[0].startsWith('0') || parts[1].startsWith('0')) {
-          val = "'" + val;
-        }
+      // Add leading apostrophe if value starts with '0' and contains non-digit characters
+      if (val && val.startsWith('0') && !/^\d+$/.test(val)) {
+        val = "'" + val;
+      }
+      out[h] = val;
+    });
+    return out;
+  });
+
+  let csv = Papa.unparse(exportRows, { columns: headers });
+  let BOM = '\uFEFF';
+  let blob = new Blob([BOM + csv], { type: 'text/csv;charset=utf-8;' });
+  let link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = 'validated_table3_application.csv';
+  link.click();
+  URL.revokeObjectURL(link.href);
+}
       }
       out[h] = val;
     });

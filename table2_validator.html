@@ -150,6 +150,35 @@ function autoCorrectRow(row, rowIdx) {
     if (fixed !== orig) { fixes.push('bin: cleaned non-digits'); row.bin = fixed; }
   }
 
+  ['capital_amount','gross_amount','gross_amount_essential','gross_amount_nonessential'].forEach(f => {
+    orig = v(row, f);
+    if (orig) {
+      let n = orig.replace(/[^\d.-]/g, '');
+      if (n !== '' && !isNaN(n) && n !== orig) {
+        // Allow decimals, keep as is if valid
+        fixed = Number(n).toString();
+        if (fixed !== orig) {
+          fixes.push(f + ': "' + orig + '" -> "' + fixed + '"');
+          row[f] = fixed;
+        }
+      }
+    }
+  });
+
+  DATE_FIELDS.forEach(f => {
+    orig = v(row, f);
+    if (orig) {
+      fixed = formatDateStr(orig);
+      if (fixed !== orig) {
+        fixes.push(f + ': "' + orig + '" -> "' + fixed + '"');
+        row[f] = fixed;
+      }
+    }
+  });
+
+  return fixes;
+}
+
   orig = v(row, 'business_line_code');
   if (orig) {
     fixed = orig.replace(/[^\d.]/g, '');
@@ -461,11 +490,24 @@ function exportCSV() {
     let out = {};
     headers.forEach(h => {
       let val = row[h] != null ? String(row[h]).trim() : '';
-      if (DATE_FIELDS.includes(h) && val && /^\d{2}\/\d{2}\/\d{4}$/.test(val)) {
-        let parts = val.split('/');
-        if (parts[0].startsWith('0') || parts[1].startsWith('0')) {
-          val = "'" + val;
-        }
+      // Add leading apostrophe if value starts with '0' and contains non-digit characters
+      if (val && val.startsWith('0') && !/^\d+$/.test(val)) {
+        val = "'" + val;
+      }
+      out[h] = val;
+    });
+    return out;
+  });
+
+  let csv = Papa.unparse(exportRows, { columns: headers });
+  let BOM = '\uFEFF';
+  let blob = new Blob([BOM + csv], { type: 'text/csv;charset=utf-8;' });
+  let link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = 'validated_table2_business_activity.csv';
+  link.click();
+  URL.revokeObjectURL(link.href);
+}
       }
       out[h] = val;
     });

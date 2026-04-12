@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Table 4 - BPLS Application Fee CSV Validator</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#f0f2f5;padding:20px}
+h2{color:#1a1a2e;margin-bottom:12px;font-size:20px}
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px;background:#fff;padding:14px;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,.1)}
+.toolbar input[type=file]{font-size:14px}
+.btn{padding:8px 18px;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn-primary{background:#4361ee;color:#fff}
+.btn-primary:hover:not(:disabled){background:#3a56d4}
+.btn-success{background:#2ec4b6;color:#fff}
+.btn-success:hover:not(:disabled){background:#26a89c}
+.btn-warning{background:#ff9f1c;color:#fff}
+.btn-warning:hover:not(:disabled){background:#e68f15}
+.btn-purple{background:#7c3aed;color:#fff}
+.btn-purple:hover:not(:disabled){background:#6d28d9}
+#status{padding:10px 16px;border-radius:6px;font-size:13px;font-weight:500;margin-bottom:12px}
+.status-info{background:#e8f4fd;color:#0369a1;border-left:4px solid #0284c7}
+.status-ok{background:#d1fae5;color:#065f46;border-left:4px solid #10b981}
+.status-err{background:#fee2e2;color:#991b1b;border-left:4px solid #ef4444}
+.summary{background:#fff;border-radius:8px;padding:14px 18px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,.1);font-size:13px;display:none;max-height:200px;overflow-y:auto}
+.summary h4{margin-bottom:8px;color:#dc2626}
+.summary .err-row{padding:4px 0;border-bottom:1px solid #fee2e2;color:#7f1d1d}
+.summary .err-row:last-child{border-bottom:none}
+.table-wrap{overflow:auto;max-height:72vh;background:#fff;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,.1)}
+table{border-collapse:collapse;font-size:12px;table-layout:fixed}
+thead th{background:#1e293b;color:#fff;padding:8px 10px;position:sticky;top:0;z-index:2;text-align:left;white-space:nowrap;font-weight:600;letter-spacing:.3px;min-width:160px}
+thead th.row-num{width:45px;min-width:45px;text-align:center;background:#0f172a;position:sticky;left:0;z-index:3}
+tbody td{padding:3px 4px;border-bottom:1px solid #e2e8f0;vertical-align:top;min-width:160px}
+tbody td.row-num{background:#f8fafc;text-align:center;color:#64748b;font-weight:600;font-size:11px;min-width:45px;width:45px;position:sticky;left:0;z-index:1}
+tbody tr:hover{background:#f8fafc}
+tbody tr.has-error{background:#fef2f2}
+tbody tr.has-error:hover{background:#fee2e2}
+.cell-wrap input{width:100%;border:1px solid #e2e8f0;padding:5px 7px;font-size:12px;border-radius:3px;background:#fff;font-family:inherit;min-width:140px}
+.cell-wrap input:focus{outline:none;border-color:#4361ee;box-shadow:0 0 0 2px rgba(67,97,238,.15)}
+.cell-wrap input.cell-err{border-color:#ef4444;background:#fef2f2}
+.cell-wrap input.cell-err:focus{box-shadow:0 0 0 2px rgba(239,68,68,.2)}
+.cell-wrap input.cell-ok{border-color:#10b981;background:#f0fdf4}
+.cell-wrap input.cell-autocorrected{border-color:#f59e0b;background:#fffbeb}
+.cell-err-msg{color:#dc2626;font-size:10px;margin-top:1px;line-height:1.3}
+.legend{display:flex;gap:16px;font-size:12px;color:#64748b;margin-top:10px;padding:8px 0;flex-wrap:wrap}
+.legend span{display:flex;align-items:center;gap:4px}
+.legend .dot{width:12px;height:12px;border-radius:2px;display:inline-block}
+.dot-err{background:#fef2f2;border:1px solid #ef4444}
+.dot-ok{background:#d1fae5;border:1px solid #10b981}
+.dot-neutral{background:#fff;border:1px solid #e2e8f0}
+.dot-auto{background:#fffbeb;border:1px solid #f59e0b}
+.required-badge{color:#dc2626;font-size:10px;font-weight:700}
+.optional-badge{color:#94a3b8;font-size:10px}
+.autocorrect-log{background:#fff;border-radius:8px;padding:14px 18px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,.1);font-size:12px;display:none;max-height:180px;overflow-y:auto}
+.autocorrect-log h4{margin-bottom:8px;color:#92400e}
+.autocorrect-log .ac-row{padding:3px 0;border-bottom:1px solid #fef3c7;color:#78350f}
+.autocorrect-log .ac-row:last-child{border-bottom:none}
+.autocorrect-log .ac-field{font-weight:600}
+.tooltip{position:absolute;bottom:calc(100% + 4px);left:0;z-index:100;background:#1e293b;color:#f1f5f9;padding:10px 12px;border-radius:6px;font-size:11px;line-height:1.5;max-width:340px;min-width:220px;box-shadow:0 8px 24px rgba(0,0,0,.25);pointer-events:none;opacity:0;transition:opacity .2s;display:flex;flex-direction:column;gap:4px}
+.tooltip .tip-msg{color:#fca5a5;font-weight:600;font-size:12px}
+.tooltip .tip-rule{color:#fbbf24;font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.3px}
+.tooltip .tip-hint{color:#86efac;border-top:1px solid #334155;padding-top:6px;margin-top:2px}
+.tooltip .tip-hint::before{content:'Fix: '}
+.cell-wrap{position:relative}
+.cell-wrap:hover .tooltip{opacity:1}
+</style>
+</head>
+<body>
+<h2>BPLS Application Fee - CSV Validator & Formatter (Table 4)</h2>
+
+<div class="toolbar">
+  <input type="file" id="csvFile" accept=".csv">
+  <button class="btn btn-purple" id="autocorrectBtn" disabled>Auto-Correct</button>
+  <button class="btn btn-primary" id="validateBtn" disabled>Validate</button>
+  <button class="btn btn-warning" id="revalidateBtn" style="display:none">Re-Validate</button>
+  <button class="btn btn-success" id="exportBtn" style="display:none" disabled>Export Corrected CSV</button>
+</div>
+
+<div id="status" class="status-info">Upload a CSV file to begin validation.</div>
+<div id="autocorrectLog" class="autocorrect-log"></div>
+<div id="errorSummary" class="summary"></div>
+
+<div id="tableContainer"></div>
+
+<div class="legend">
+  <span><span class="dot dot-err"></span> Error</span>
+  <span><span class="dot dot-ok"></span> Valid</span>
+  <span><span class="dot dot-neutral"></span> Not validated</span>
+  <span><span class="dot dot-auto"></span> Auto-corrected</span>
+  <span style="color:#dc2626">*</span> Required
+</div>
+
+<script>
+const RULES = {
+  business_bin: { required: true, label: 'Business BIN' },
+  application_or_no: { required: true, label: 'OR No.' },
+  code: { required: true, label: 'Fee Code', min: 2, max: 20 },
+  description: { required: true, label: 'Description', min: 2, max: 100 },
+  amount: { required: true, label: 'Amount', numeric: true },
+  discount: { required: true, label: 'Discount', numeric: true },
+  Interest: { required: true, label: 'Interest', numeric: true },
+  Surcharge: { required: true, label: 'Surcharge', numeric: true },
+  total: { required: true, label: 'Total', numeric: true },
+  type: { required: true, label: 'Fee Type', allowed: ['LICENSE','PERMIT','SANITARY','GARBAGE','FIXED','OTHER'] },
+  qtr_from: { required: true, label: 'Qtr From', allowed: ['1','2','3','4'] },
+  qtr_to: { required: true, label: 'Qtr To', allowed: ['1','2','3','4'] },
+  year: { required: true, label: 'Year' }
+};
+
+const HINTS = {
+  business_bin: { rule: 'BIN Format: PSGC7-YEAR4-INC7', fix: 'Use format: 7-digit PSGC code + dash + 4-digit year + dash + 7-digit increment. Example: 0300801-2024-0000001' },
+  application_or_no: { rule: 'Required, non-empty alphanumeric', fix: 'Enter the application OR number. Must be a non-empty alphanumeric string. Example: U12345678' },
+  code: { rule: 'Required, 2-20 alphanumeric characters', fix: 'Enter the fee code (2-20 chars). Spaces will be auto-stripped. Example: GF-01' },
+  description: { rule: 'Required, 2-100 characters', fix: 'Enter a fee description between 2 and 100 characters. Example: Garbage Fee' },
+  amount: { rule: 'Required, non-negative number', fix: 'Enter the fee amount as a number >= 0. Non-numeric characters will be stripped.' },
+  discount: { rule: 'Required, non-negative number', fix: 'Enter the discount as a number >= 0. Default is 0 if none.' },
+  Interest: { rule: 'Required, non-negative number', fix: 'Enter the interest as a number >= 0. Default is 0 if none.' },
+  Surcharge: { rule: 'Required, non-negative number', fix: 'Enter the surcharge as a number >= 0. Default is 0 if none.' },
+  total: { rule: 'Required, must equal Amount + Surcharge + Interest - Discount', fix: 'Total is auto-calculated. If blank or wrong, auto-correct will fix it. Formula: amount + Surcharge + Interest - discount.' },
+  type: { rule: 'Must be one of: LICENSE, PERMIT, SANITARY, GARBAGE, FIXED, OTHER', fix: 'Enter the fee type. Will be auto-uppercased. Allowed: LICENSE, PERMIT, SANITARY, GARBAGE, FIXED, OTHER.' },
+  qtr_from: { rule: 'Required, must be 1, 2, 3, or 4', fix: 'Enter the starting quarter (1, 2, 3, or 4).' },
+  qtr_to: { rule: 'Required, must be 1-4 and >= Qtr From', fix: 'Enter the ending quarter (1, 2, 3, or 4). Must be greater than or equal to Qtr From.' },
+  year: { rule: 'Required, 4-digit year (1900-2100)', fix: 'Enter a 4-digit year between 1900 and 2100. Example: 2024' }
+};
+
+const FIELD_ORDER = ['business_bin','application_or_no','code','description','amount','discount','Interest','Surcharge','total','type','qtr_from','qtr_to','year'];
+
+const DATE_FIELDS = [];
+
+let headers = [];
+let rows = [];
+let cellErrors = {};
+let autocorrectedCells = {};
+
+const v = (row, key) => (row[key] == null ? '' : String(row[key])).trim();
+
+function autoCorrectRow(row, rowIdx) {
+  let fixes = [];
+  let orig, fixed;
+
+  orig = v(row, 'type');
+  if (orig) {
+    fixed = orig.toUpperCase().replace(/\s+/g, '');
+    if (fixed !== orig) { fixes.push('type: "' + orig + '" -> "' + fixed + '"'); row.type = fixed; }
+  }
+
+  orig = v(row, 'code');
+  if (orig) {
+    fixed = orig.replace(/\s+/g, '');
+    if (fixed !== orig) { fixes.push('code: stripped spaces from "' + orig + '" -> "' + fixed + '"'); row.code = fixed; }
+  }
+
+  ['amount','discount','Interest','Surcharge','total'].forEach(f => {
+    orig = v(row, f);
+    if (orig) {
+      let n = orig.replace(/[^\d.\-]/g, '');
+      if (n !== orig) {
+        fixes.push(f + ': "' + orig + '" -> "' + n + '"');
+        row[f] = n;
+      }
+    }
+  });
+
+  let amt = v(row, 'amount');
+  let disc = v(row, 'discount');
+  let intr = v(row, 'Interest');
+  let surc = v(row, 'Surcharge');
+  let tot = v(row, 'total');
+
+  if (amt !== '' && disc !== '' && intr !== '' && surc !== '' &&
+      !isNaN(Number(amt)) && !isNaN(Number(disc)) && !isNaN(Number(intr)) && !isNaN(Number(surc))) {
+    let expected = Number(amt) + Number(surc) + Number(intr) - Number(disc);
+    let expectedRounded = Math.round(expected * 100) / 100;
+    if (tot === '' || isNaN(Number(tot)) || Math.abs(Number(tot) - expectedRounded) > 0.001) {
+      let newVal = String(expectedRounded);
+      fixes.push('total: "' + tot + '" -> "' + newVal + '" (auto-calculated: ' + amt + ' + ' + surc + ' + ' + intr + ' - ' + disc + ')');
+      row.total = newVal;
+    }
+  }
+
+  return fixes;
+}
+
+function formatRow(row) {
+  if (v(row, 'type')) row.type = v(row, 'type').toUpperCase().replace(/\s+/g, '');
+  if (v(row, 'code')) row.code = v(row, 'code').replace(/\s+/g, '');
+  ['amount','discount','Interest','Surcharge','total'].forEach(f => {
+    let n = v(row, f).replace(/[^\d.\-]/g, '');
+    if (n !== '' && !isNaN(Number(n))) row[f] = n;
+  });
+
+  let amt = v(row, 'amount');
+  let disc = v(row, 'discount');
+  let intr = v(row, 'Interest');
+  let surc = v(row, 'Surcharge');
+  if (amt !== '' && disc !== '' && intr !== '' && surc !== '' &&
+      !isNaN(Number(amt)) && !isNaN(Number(disc)) && !isNaN(Number(intr)) && !isNaN(Number(surc))) {
+    let tot = v(row, 'total');
+    let expected = Math.round((Number(amt) + Number(surc) + Number(intr) - Number(disc)) * 100) / 100;
+    if (tot === '' || isNaN(Number(tot)) || Math.abs(Number(tot) - expected) > 0.001) {
+      row.total = String(expected);
+    }
+  }
+
+  return row;
+}
+
+function validateRow(row, rowIdx, seenBins) {
+  let errs = {};
+  const g = (key) => v(row, key);
+
+  let bin = g('business_bin');
+  if (!bin) errs.business_bin = 'Required';
+  else if (!/^\d{7}-\d{4}-\d{7}$/.test(bin)) errs.business_bin = 'Format: PSGC7-YEAR4-INC7 (e.g. 0300801-2024-0000001)';
+  else if (seenBins.has(bin)) errs.business_bin = 'Duplicate BIN';
+  else seenBins.add(bin);
+
+  let orNo = g('application_or_no');
+  if (!orNo) errs.application_or_no = 'Required';
+  else if (!/^[a-zA-Z0-9]+$/.test(orNo)) errs.application_or_no = 'Must be alphanumeric';
+
+  let code = g('code');
+  if (!code) errs.code = 'Required';
+  else if (code.length < 2) errs.code = 'Min 2 characters';
+  else if (code.length > 20) errs.code = 'Max 20 characters';
+
+  let desc = g('description');
+  if (!desc) errs.description = 'Required';
+  else if (desc.length < 2) errs.description = 'Min 2 characters';
+  else if (desc.length > 100) errs.description = 'Max 100 characters';
+
+  let amt = g('amount');
+  if (amt === '') errs.amount = 'Required';
+  else if (isNaN(Number(amt))) errs.amount = 'Must be a number';
+  else if (Number(amt) < 0) errs.amount = 'Must be >= 0';
+
+  let disc = g('discount');
+  if (disc === '') errs.discount = 'Required';
+  else if (isNaN(Number(disc))) errs.discount = 'Must be a number';
+  else if (Number(disc) < 0) errs.discount = 'Must be >= 0';
+
+  let intr = g('Interest');
+  if (intr === '') errs.Interest = 'Required';
+  else if (isNaN(Number(intr))) errs.Interest = 'Must be a number';
+  else if (Number(intr) < 0) errs.Interest = 'Must be >= 0';
+
+  let surc = g('Surcharge');
+  if (surc === '') errs.Surcharge = 'Required';
+  else if (isNaN(Number(surc))) errs.Surcharge = 'Must be a number';
+  else if (Number(surc) < 0) errs.Surcharge = 'Must be >= 0';
+
+  let tot = g('total');
+  if (tot === '') errs.total = 'Required';
+  else if (isNaN(Number(tot))) errs.total = 'Must be a number';
+  else if (amt !== '' && disc !== '' && intr !== '' && surc !== '' &&
+           !isNaN(Number(amt)) && !isNaN(Number(disc)) && !isNaN(Number(intr)) && !isNaN(Number(surc))) {
+    let expected = Math.round((Number(amt) + Number(surc) + Number(intr) - Number(disc)) * 100) / 100;
+    if (Math.abs(Number(tot) - expected) > 0.001) {
+      errs.total = 'Must equal ' + amt + ' + ' + surc + ' + ' + intr + ' - ' + disc + ' = ' + expected;
+    }
+  }
+
+  let feeType = g('type');
+  const validTypes = RULES.type.allowed;
+  if (!feeType) errs.type = 'Required';
+  else if (!validTypes.includes(feeType)) errs.type = 'Must be: ' + validTypes.join(', ');
+
+  let qtrFrom = g('qtr_from');
+  if (!qtrFrom) errs.qtr_from = 'Required';
+  else if (!['1','2','3','4'].includes(qtrFrom)) errs.qtr_from = 'Must be 1, 2, 3, or 4';
+
+  let qtrTo = g('qtr_to');
+  if (!qtrTo) errs.qtr_to = 'Required';
+  else if (!['1','2','3','4'].includes(qtrTo)) errs.qtr_to = 'Must be 1, 2, 3, or 4';
+  else if (qtrFrom && ['1','2','3','4'].includes(qtrFrom) && Number(qtrTo) < Number(qtrFrom)) {
+    errs.qtr_to = 'Must be >= Qtr From (' + qtrFrom + ')';
+  }
+
+  let yr = g('year');
+  if (!yr) errs.year = 'Required';
+  else if (!/^\d{4}$/.test(yr)) errs.year = 'Must be 4-digit year';
+  else if (Number(yr) < 1900 || Number(yr) > 2100) errs.year = 'Year must be 1900-2100';
+
+  return errs;
+}
+
+function runAutoCorrect() {
+  autocorrectedCells = {};
+  let totalFixes = 0;
+  let allLogs = [];
+  rows.forEach((row, idx) => {
+    let fixes = autoCorrectRow(row, idx);
+    if (fixes.length > 0) {
+      autocorrectedCells[idx] = new Set();
+      fixes.forEach(fix => {
+        let match = fix.match(/^([a-zA-Z_]+)/);
+        if (match) autocorrectedCells[idx].add(match[1]);
+        totalFixes++;
+      });
+      allLogs.push({ row: idx+1, fixes });
+    }
+  });
+
+  let logEl = document.getElementById('autocorrectLog');
+  if (totalFixes > 0) {
+    logEl.style.display = 'block';
+    let html = '<h4>Auto-Correct Applied (' + totalFixes + ' fix' + (totalFixes>1?'es':'') + ')</h4>';
+    allLogs.forEach(({row, fixes}) => {
+      html += '<div class="ac-row"><b>Row ' + row + ':</b> ' + fixes.join(' &bull; ') + '</div>';
+    });
+    logEl.innerHTML = html;
+  } else {
+    logEl.style.display = 'block';
+    logEl.innerHTML = '<h4>Auto-Correct</h4><div class="ac-row">No auto-correctable issues found.</div>';
+  }
+
+  let s = document.getElementById('status');
+  s.className = 'status-info';
+  s.textContent = 'Auto-correct applied ' + totalFixes + ' fix' + (totalFixes!==1?'es':'') + '. Click "Validate" to check remaining errors. Edits auto-revalidate.';
+  renderTable();
+}
+
+let hasValidated = false;
+
+function validateAll() {
+  hasValidated = true;
+  cellErrors = {};
+  let totalErrors = 0;
+  let seenBins = new Set();
+  rows.forEach((row, idx) => {
+    let errs = validateRow(row, idx, seenBins);
+    if (Object.keys(errs).length > 0) {
+      cellErrors[idx] = errs;
+      totalErrors += Object.keys(errs).length;
+    }
+  });
+  renderTable();
+  updateStatus(totalErrors);
+}
+
+function updateStatus(errCount) {
+  const s = document.getElementById('status');
+  const sum = document.getElementById('errorSummary');
+  document.getElementById('exportBtn').style.display = 'inline-block';
+  document.getElementById('exportBtn').disabled = false;
+  document.getElementById('revalidateBtn').style.display = 'inline-block';
+
+  if (errCount === 0) {
+    s.className = 'status-ok';
+    s.textContent = 'All ' + rows.length + ' rows are valid. Click "Export Corrected CSV" to save.';
+    sum.style.display = 'none';
+  } else {
+    s.className = 'status-err';
+    s.textContent = 'Found ' + errCount + ' error(s) in ' + Object.keys(cellErrors).length + ' of ' + rows.length + ' row(s). Edit cells to auto-fix, or export as-is.';
+    sum.style.display = 'block';
+    let html = '<h4>Error Summary (' + errCount + ' errors)</h4>';
+    Object.entries(cellErrors).forEach(([r, errs]) => {
+      let items = Object.entries(errs).map(([k,msg]) => '<b>' + (RULES[k]?.label || k) + ':</b> ' + msg).join(' &bull; ');
+      html += '<div class="err-row">Row ' + (Number(r)+1) + ': ' + items + '</div>';
+    });
+    sum.innerHTML = html;
+  }
+}
+
+function renderTable() {
+  const c = document.getElementById('tableContainer');
+  if (!rows.length) return;
+
+  let displayHeaders = headers.length ? headers : FIELD_ORDER;
+  let orderedHeaders = [];
+  FIELD_ORDER.forEach(f => { if (displayHeaders.includes(f)) orderedHeaders.push(f); });
+  displayHeaders.forEach(f => { if (!orderedHeaders.includes(f)) orderedHeaders.push(f); });
+
+  let validated = hasValidated;
+
+  let html = '<div class="table-wrap"><table><thead><tr><th class="row-num">#</th>';
+  orderedHeaders.forEach(h => {
+    let rule = RULES[h];
+    let badge = '';
+    if (rule) {
+      if (rule.required) badge = ' <span class="required-badge">*</span>';
+      else badge = ' <span class="optional-badge">opt</span>';
+    }
+    html += '<th>' + (rule?.label || h) + badge + '</th>';
+  });
+  html += '</tr></thead><tbody>';
+
+  rows.forEach((row, rIdx) => {
+    let hasErr = cellErrors[rIdx] && Object.keys(cellErrors[rIdx]).length > 0;
+    html += '<tr class="' + (hasErr ? 'has-error' : '') + '"><td class="row-num">' + (rIdx+1) + '</td>';
+    orderedHeaders.forEach(key => {
+      let err = cellErrors[rIdx]?.[key];
+      let isAuto = autocorrectedCells[rIdx] && autocorrectedCells[rIdx].has(key);
+      let cls = '';
+      if (err) cls = 'cell-err';
+      else if (isAuto && validated) cls = 'cell-autocorrected';
+      else if (validated) cls = 'cell-ok';
+      let displayVal = row[key] || '';
+      let tooltipHtml = buildTooltip(key, err);
+      html += '<td><div class="cell-wrap"><input type="text" class="' + cls + '" data-row="' + rIdx + '" data-col="' + key + '" value="' + escapeAttr(displayVal) + '">' + tooltipHtml + '</div></td>';
+    });
+    html += '</tr>';
+  });
+  html += '</tbody></table></div>';
+  c.innerHTML = html;
+
+  c.querySelectorAll('input').forEach(input => {
+    input.addEventListener('change', onCellChange);
+    input.addEventListener('input', onCellInput);
+    input.addEventListener('keydown', function(e) {
+      if (e.key === 'Tab') return;
+      if (e.key === 'Enter') { e.preventDefault(); this.blur(); }
+    });
+  });
+}
+
+function escapeAttr(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function buildTooltip(key, err) {
+  if (!err) return '';
+  let hint = HINTS[key];
+  let parts = [];
+  parts.push('<div class="tip-msg">&#x26A0; ' + escapeHtml(err) + '</div>');
+  if (hint) {
+    parts.push('<div class="tip-rule">' + escapeHtml(hint.rule) + '</div>');
+    parts.push('<div class="tip-hint">' + escapeHtml(hint.fix) + '</div>');
+  }
+  return '<div class="tooltip">' + parts.join('') + '</div>';
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function onCellInput(e) {
+  if (!hasValidated) return;
+  const r = parseInt(e.target.dataset.row);
+  const k = e.target.dataset.col;
+  let val = e.target.value;
+  if (k === 'type') val = val.toUpperCase().replace(/\s+/g, '');
+  if (k === 'code') val = val.replace(/\s+/g, '');
+  if (['amount','discount','Interest','Surcharge','total'].includes(k)) val = val.replace(/[^\d.\-]/g, '');
+  rows[r][k] = val;
+  if (val !== e.target.value) e.target.value = val;
+  runLiveValidation(r, k, e.target);
+}
+
+function onCellChange(e) {
+  const r = parseInt(e.target.dataset.row);
+  const k = e.target.dataset.col;
+  let val = e.target.value;
+  if (k === 'type') val = val.toUpperCase().replace(/\s+/g, '');
+  if (k === 'code') val = val.replace(/\s+/g, '');
+  if (['amount','discount','Interest','Surcharge','total'].includes(k)) val = val.replace(/[^\d.\-]/g, '');
+  rows[r][k] = val;
+  e.target.value = val;
+  if (!hasValidated) return;
+  runLiveValidation(r, k, e.target);
+}
+
+function runLiveValidation(changedRow, changedKey, changedInput) {
+  let totalErrors = 0;
+  let seenBins = new Set();
+  rows.forEach((row, idx) => {
+    let errs = validateRow(row, idx, seenBins);
+    if (Object.keys(errs).length > 0) {
+      cellErrors[idx] = errs;
+      totalErrors += Object.keys(errs).length;
+    } else {
+      delete cellErrors[idx];
+    }
+  });
+  updateStatus(totalErrors);
+  updateRowVisuals(changedRow, changedInput);
+}
+
+function updateRowVisuals(rowIdx, changedInput) {
+  let container = document.getElementById('tableContainer');
+  let rowInputs = container.querySelectorAll('input[data-row="' + rowIdx + '"]');
+  let rowTr = (rowInputs.length > 0 ? rowInputs[0].closest('tr') : null);
+
+  if (rowTr) {
+    let hasErr = cellErrors[rowIdx] && Object.keys(cellErrors[rowIdx]).length > 0;
+    rowTr.className = hasErr ? 'has-error' : '';
+  }
+
+  rowInputs.forEach(input => {
+    let key = input.dataset.col;
+    let err = cellErrors[rowIdx]?.[key];
+    let isAuto = autocorrectedCells[rowIdx] && autocorrectedCells[rowIdx].has(key);
+
+    input.className = '';
+    if (err) input.classList.add('cell-err');
+    else if (isAuto) input.classList.add('cell-autocorrected');
+    else input.classList.add('cell-ok');
+
+    let wrap = input.closest('.cell-wrap');
+    let oldTip = wrap.querySelector('.tooltip');
+    if (oldTip) oldTip.remove();
+    let newTip = buildTooltip(key, err);
+    if (newTip) wrap.insertAdjacentHTML('beforeend', newTip);
+  });
+}
+
+function exportCSV() {
+  let exportRows = rows.map(row => {
+    let out = {};
+    headers.forEach(h => {
+      let val = row[h] != null ? String(row[h]).trim() : '';
+      out[h] = val;
+    });
+    return out;
+  });
+
+  let csv = Papa.unparse(exportRows, { columns: headers });
+  let BOM = '\uFEFF';
+  let blob = new Blob([BOM + csv], { type: 'text/csv;charset=utf-8;' });
+  let link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = 'validated_table4_application_fee.csv';
+  link.click();
+  URL.revokeObjectURL(link.href);
+}
+
+document.getElementById('csvFile').addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  Papa.parse(file, {
+    header: true,
+    skipEmptyLines: true,
+    complete: (results) => {
+      headers = results.meta.fields || [];
+      rows = results.data.map(r => formatRow({...r}));
+      cellErrors = {};
+      autocorrectedCells = {};
+      hasValidated = false;
+      document.getElementById('validateBtn').disabled = false;
+      document.getElementById('autocorrectBtn').disabled = false;
+      let s = document.getElementById('status');
+      s.className = 'status-info';
+      s.textContent = 'Loaded ' + rows.length + ' rows x ' + headers.length + ' columns. Click "Auto-Correct" then "Validate".';
+      document.getElementById('errorSummary').style.display = 'none';
+      document.getElementById('autocorrectLog').style.display = 'none';
+      document.getElementById('exportBtn').style.display = 'none';
+      document.getElementById('revalidateBtn').style.display = 'none';
+      renderTable();
+    }
+  });
+});
+
+document.getElementById('autocorrectBtn').addEventListener('click', runAutoCorrect);
+document.getElementById('validateBtn').addEventListener('click', validateAll);
+document.getElementById('revalidateBtn').addEventListener('click', validateAll);
+document.getElementById('exportBtn').addEventListener('click', exportCSV);
+</script>
+</body>
+</html>

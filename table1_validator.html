@@ -508,7 +508,9 @@ function validateAll() {
 function updateStatus(errCount) {
   const s = document.getElementById('status');
   const sum = document.getElementById('errorSummary');
-  document.getElementById('exportBtn').style.display = 'inline-block';
+  const exportBtn = document.getElementById('exportBtn');
+  exportBtn.style.display = 'inline-block';
+  exportBtn.disabled = false;
   document.getElementById('revalidateBtn').style.display = 'inline-block';
 
   if (errCount === 0) {

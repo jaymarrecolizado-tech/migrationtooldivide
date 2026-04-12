@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BPLS Business Activity - CSV Validator & Formatter (Table 2)</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#f0f2f5;padding:20px}
+h2{color:#1a1a2e;margin-bottom:12px;font-size:20px}
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px;background:#fff;padding:14px;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,.1)}
+.toolbar input[type=file]{font-size:14px}
+.btn{padding:8px 18px;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn-primary{background:#4361ee;color:#fff}
+.btn-primary:hover:not(:disabled){background:#3a56d4}
+.btn-success{background:#2ec4b6;color:#fff}
+.btn-success:hover:not(:disabled){background:#26a89c}
+.btn-warning{background:#ff9f1c;color:#fff}
+.btn-warning:hover:not(:disabled){background:#e68f15}
+.btn-purple{background:#7c3aed;color:#fff}
+.btn-purple:hover:not(:disabled){background:#6d28d9}
+#status{padding:10px 16px;border-radius:6px;font-size:13px;font-weight:500;margin-bottom:12px}
+.status-info{background:#e8f4fd;color:#0369a1;border-left:4px solid #0284c7}
+.status-ok{background:#d1fae5;color:#065f46;border-left:4px solid #10b981}
+.status-err{background:#fee2e2;color:#991b1b;border-left:4px solid #ef4444}
+.summary{background:#fff;border-radius:8px;padding:14px 18px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,.1);font-size:13px;display:none;max-height:200px;overflow-y:auto}
+.summary h4{margin-bottom:8px;color:#dc2626}
+.summary .err-row{padding:4px 0;border-bottom:1px solid #fee2e2;color:#7f1d1d}
+.summary .err-row:last-child{border-bottom:none}
+.table-wrap{overflow:auto;max-height:72vh;background:#fff;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,.1)}
+table{border-collapse:collapse;font-size:12px;table-layout:fixed}
+thead th{background:#1e293b;color:#fff;padding:8px 10px;position:sticky;top:0;z-index:2;text-align:left;white-space:nowrap;font-weight:600;letter-spacing:.3px;min-width:160px}
+thead th.row-num{width:45px;min-width:45px;text-align:center;background:#0f172a;position:sticky;left:0;z-index:3}
+tbody td{padding:3px 4px;border-bottom:1px solid #e2e8f0;vertical-align:top;min-width:160px}
+tbody td.row-num{background:#f8fafc;text-align:center;color:#64748b;font-weight:600;font-size:11px;min-width:45px;width:45px;position:sticky;left:0;z-index:1}
+tbody tr:hover{background:#f8fafc}
+tbody tr.has-error{background:#fef2f2}
+tbody tr.has-error:hover{background:#fee2e2}
+.cell-wrap input{width:100%;border:1px solid #e2e8f0;padding:5px 7px;font-size:12px;border-radius:3px;background:#fff;font-family:inherit;min-width:140px}
+.cell-wrap input:focus{outline:none;border-color:#4361ee;box-shadow:0 0 0 2px rgba(67,97,238,.15)}
+.cell-wrap input.cell-err{border-color:#ef4444;background:#fef2f2}
+.cell-wrap input.cell-err:focus{box-shadow:0 0 0 2px rgba(239,68,468,.2)}
+.cell-wrap input.cell-ok{border-color:#10b981;background:#f0fdf4}
+.cell-wrap input.cell-autocorrected{border-color:#f59e0b;background:#fffbeb}
+.cell-err-msg{color:#dc2626;font-size:10px;margin-top:1px;line-height:1.3}
+.legend{display:flex;gap:16px;font-size:12px;color:#64748b;margin-top:10px;padding:8px 0;flex-wrap:wrap}
+.legend span{display:flex;align-items:center;gap:4px}
+.legend .dot{width:12px;height:12px;border-radius:2px;display:inline-block}
+.dot-err{background:#fef2f2;border:1px solid #ef4444}
+.dot-ok{background:#d1fae5;border:1px solid #10b981}
+.dot-neutral{background:#fff;border:1px solid #e2e8f0}
+.dot-auto{background:#fffbeb;border:1px solid #f59e0b}
+.required-badge{color:#dc2626;font-size:10px;font-weight:700}
+.optional-badge{color:#94a3b8;font-size:10px}
+.autocorrect-log{background:#fff;border-radius:8px;padding:14px 18px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,.1);font-size:12px;display:none;max-height:180px;overflow-y:auto}
+.autocorrect-log h4{margin-bottom:8px;color:#92400e}
+.autocorrect-log .ac-row{padding:3px 0;border-bottom:1px solid #fef3c7;color:#78350f}
+.autocorrect-log .ac-row:last-child{border-bottom:none}
+.autocorrect-log .ac-field{font-weight:600}
+.tooltip{position:absolute;bottom:calc(100% + 4px);left:0;z-index:100;background:#1e293b;color:#f1f5f9;padding:10px 12px;border-radius:6px;font-size:11px;line-height:1.5;max-width:340px;min-width:220px;box-shadow:0 8px 24px rgba(0,0,0,.25);pointer-events:none;opacity:0;transition:opacity:.2s;display:flex;flex-direction:gap:4px}
+.tooltip .tip-msg{color:#fca5a5;font-weight:600;font-size:12px}
+.tooltip .tip-rule{color:#fbbf24;font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.3px}
+.tooltip .tip-hint{color:#86efac;border-top:1px solid #334155;padding-top:6px;margin-top:2px}
+.tooltip .tip-hint::before{content:'Fix: '}
+.cell-wrap{position:relative}
+.cell-wrap:hover .tooltip{opacity:1}
+</style>
+</head>
+<body>
+<h2>BPLS Business Activity - CSV Validator & Formatter (Table 2)</h2>
+
+<div class="toolbar">
+  <input type="file" id="csvFile" accept=".csv">
+  <button class="btn btn-purple" id="autocorrectBtn" disabled>Auto-Correct</button>
+  <button class="btn btn-primary" id="validateBtn" disabled>Validate</button>
+  <button class="btn btn-warning" id="revalidateBtn" style="display:none">Re-Validate</button>
+  <button class="btn btn-success" id="exportBtn" style="display:none" disabled>Export Corrected CSV</button>
+</div>
+
+<div id="status" class="status-info">Upload a CSV file to begin validation.</div>
+<div id="autocorrectLog" class="autocorrect-log"></div>
+<div id="errorSummary" class="summary"></div>
+
+<div id="tableContainer"></div>
+
+<div class="legend">
+  <span><span class="dot dot-err"></span> Error</span>
+  <span><span class="dot dot-ok"></span> Valid</span>
+  <span><span class="dot dot-neutral"></span> Not validated</span>
+  <span><span class="dot dot-auto"></span> Auto-corrected</span>
+  <span style="color:#dc2626">*</span> Required
+  <span style="color:#94a3b8">opt</span> Optional
+  <span style="color:#f59e0b">&#9888;</span> Conditional
+</div>
+
+<script>
+const RULES = {
+  bin: { required: true, label: 'BIN' },
+  business_line_code: { required: true, label: 'Business Line Code', numeric: true },
+  capital_amount: { required: true, label: 'Capital Amount', numeric: true },
+  gross_amount: { required: true, label: 'Gross Amount', numeric: true },
+  gross_amount_essential: { required: true, label: 'Gross Essential', numeric: true },
+  gross_amount_nonessential: { required: true, label: 'Gross Non-Essential', numeric: true },
+  retired_date: { required: false, label: 'Retired Date' }
+};
+
+const HINTS = {
+  bin: { rule: 'BIN Format: PSGC7-YEAR4-INC7', fix: 'Use format: 7-digit PSGC code + dash + 4-digit year + dash + 7-digit increment. Example: 1400101-2024-0000001' },
+  business_line_code: { rule: 'Required, numeric', fix: 'Enter a numeric business line code. Must exist in system.' },
+  capital_amount: { rule: 'Required, number', fix: 'Enter capital amount as a number. Use 0 if not applicable.' },
+  gross_amount: { rule: 'Required, number', fix: 'Enter gross amount as a number. Must not be blank.' },
+  gross_amount_essential: { rule: 'Required, number', fix: 'Enter essential gross amount as a number. Must not be blank.' },
+  gross_amount_nonessential: { rule: 'Required, number', fix: 'Enter nonessential gross amount as a number. Must not be blank.' },
+  retired_date: { rule: 'Optional, MM/DD/YYYY', fix: 'Enter date as MM/DD/YYYY. Example: 12/31/2025. Leave blank if not applicable.' }
+};
+
+const FIELD_ORDER = ['bin','business_line_code','capital_amount','gross_amount','gross_amount_essential','gross_amount_nonessential','retired_date'];
+
+const DATE_FIELDS = ['retired_date'];
+
+let headers = [];
+let rows = [];
+let cellErrors = {};
+let autocorrectedCells = {};
+let hasValidated = false;
+
+const v = (row, key) => (row[key] == null ? '' : String(row[key])).trim();
+
+function pad2(n){ return String(n).padStart(2,'0'); }
+
+function formatDateStr(raw) {
+  if (!raw || !raw.trim()) return '';
+  let s = raw.trim();
+  s = s.replace(/^'+/, '');
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(s)) return s;
+  let d = new Date(s);
+  if (isNaN(d.getTime())) return raw;
+  return pad2(d.getMonth()+1) + '/' + pad2(d.getDate()) + '/' + d.getFullYear();
+}
+
+function autoCorrectRow(row, rowIdx) {
+  let fixes = [];
+  let orig, fixed;
+
+  orig = v(row, 'bin');
+  if (orig) {
+    fixed = orig.replace(/[^0-9-]/g, '');
+    if (fixed !== orig) { fixes.push('bin: cleaned non-digits'); row.bin = fixed; }
+  }
+
+  orig = v(row, 'business_line_code');
+  if (orig) {
+    fixed = orig.replace(/[^\d.]/g, '');
+    if (fixed !== orig) { fixes.push('business_line_code: stripped non-numeric'); row.business_line_code = fixed; }
+  }
+
+  ['capital_amount','gross_amount','gross_amount_essential','gross_amount_nonessential'].forEach(f => {
+    orig = v(row, f);
+    if (orig) {
+      let n = orig.replace(/[^\d.-]/g, '');
+      if (n !== '' && !isNaN(n) && n !== orig) {
+        fixed = Math.floor(Number(n)).toString();
+        fixes.push(f + ': "' + orig + '" -> "' + fixed + '"');
+        row[f] = fixed;
+      }
+    }
+  });
+
+  DATE_FIELDS.forEach(f => {
+    orig = v(row, f);
+    if (orig) {
+      fixed = formatDateStr(orig);
+      if (fixed !== orig) {
+        fixes.push(f + ': "' + orig + '" -> "' + fixed + '"');
+        row[f] = fixed;
+      }
+    }
+  });
+
+  return fixes;
+}
+
+function formatRow(row) {
+  if (v(row,'bin')) row.bin = v(row,'bin').replace(/[^0-9-]/g, '');
+  if (v(row,'business_line_code')) row.business_line_code = v(row,'business_line_code').replace(/[^\d.]/g, '');
+  ['capital_amount','gross_amount','gross_amount_essential','gross_amount_nonessential'].forEach(f => {
+    let n = v(row,f).replace(/[^\d.-]/g, '');
+    if (n !== '' && !isNaN(n)) row[f] = Math.floor(Number(n)).toString();
+  });
+  DATE_FIELDS.forEach(f => {
+    let dt = v(row, f);
+    if (dt) row[f] = formatDateStr(dt);
+  });
+  return row;
+}
+
+function validateRow(row, rowIdx, seenBins) {
+  let errs = {};
+  const g = (key) => v(row, key);
+
+  let bin = g('bin');
+  if (!bin) errs.bin = 'Required';
+  else if (!/^\d{7}-\d{4}-\d{7}$/.test(bin)) errs.bin = 'Format: PSGC7-YEAR4-INC7';
+  else if (seenBins.has(bin)) errs.bin = 'Duplicate BIN';
+  else seenBins.add(bin);
+
+  let line = g('business_line_code');
+  if (!line) errs.business_line_code = 'Required';
+  else if (!/^\d+$/.test(line)) errs.business_line_code = 'Must be numeric';
+
+  ['capital_amount','gross_amount','gross_amount_essential','gross_amount_nonessential'].forEach(f => {
+    let val = g(f);
+    if (!val) errs[f] = 'Required';
+    else if (!/^\d+$/.test(val)) errs[f] = 'Must be a number';
+  });
+
+  let ret = g('retired_date');
+  if (ret && !/^\d{2}\/\d{2}\/\d{4}$/.test(ret)) errs.retired_date = 'Must be MM/DD/YYYY';
+
+  return errs;
+}
+
+function runAutoCorrect() {
+  autocorrectedCells = {};
+  let totalFixes = 0;
+  let allLogs = [];
+  rows.forEach((row, idx) => {
+    let fixes = autoCorrectRow(row, idx);
+    if (fixes.length > 0) {
+      autocorrectedCells[idx] = new Set();
+      fixes.forEach(fix => {
+        let match = fix.match(/^([a-z_]+)/i);
+        if (match) autocorrectedCells[idx].add(match[1].toLowerCase());
+        totalFixes++;
+      });
+      allLogs.push({ row: idx+1, fixes });
+    }
+  });
+
+  let logEl = document.getElementById('autocorrectLog');
+  if (totalFixes > 0) {
+    logEl.style.display = 'block';
+    let html = '<h4>Auto-Correct Applied (' + totalFixes + ' fix' + (totalFixes>1?'es':'') + ')</h4>';
+    allLogs.forEach(({row, fixes}) => {
+      html += '<div class="ac-row"><b>Row ' + row + ':</b> ' + fixes.join(' &bull; ') + '</div>';
+    });
+    logEl.innerHTML = html;
+  } else {
+    logEl.style.display = 'block';
+    logEl.innerHTML = '<h4>Auto-Correct</h4><div class="ac-row">No auto-correctable issues found.</div>';
+  }
+
+  let s = document.getElementById('status');
+  s.className = 'status-warn';
+  s.textContent = 'Auto-correct applied ' + totalFixes + ' fix' + (totalFixes!==1?'es':'') + '. Click "Validate" to check remaining errors. Edits auto-revalidate.';
+  renderTable();
+}
+
+function validateAll() {
+  hasValidated = true;
+  cellErrors = {};
+  let totalErrors = 0;
+  let seenBins = new Set();
+  rows.forEach((row, idx) => {
+    let errs = validateRow(row, idx, seenBins);
+    if (Object.keys(errs).length > 0) {
+      cellErrors[idx] = errs;
+      totalErrors += Object.keys(errs).length;
+    }
+  });
+  renderTable();
+  updateStatus(totalErrors);
+}
+
+function updateStatus(errCount) {
+  const s = document.getElementById('status');
+  const sum = document.getElementById('errorSummary');
+  const exportBtn = document.getElementById('exportBtn');
+  const revalidateBtn = document.getElementById('revalidateBtn');
+  
+  exportBtn.style.display = 'inline-block';
+  exportBtn.disabled = false;
+  revalidateBtn.style.display = 'inline-block';
+
+  if (errCount === 0) {
+    s.className = 'status-ok';
+    s.textContent = 'All ' + rows.length + ' rows are valid. Click "Export Corrected CSV" to save.';
+    sum.style.display = 'none';
+  } else {
+    s.className = 'status-err';
+    s.textContent = 'Found ' + errCount + ' error(s) in ' + Object.keys(cellErrors).length + ' of ' + rows.length + ' row(s). Edit cells to auto-fix, or export as-is.';
+    sum.style.display = 'block';
+    let html = '<h4>Error Summary (' + errCount + ' errors)</h4>';
+    Object.entries(cellErrors).forEach(([r, errs]) => {
+      let items = Object.entries(errs).map(([k,msg]) => '<b>' + (RULES[k]?.label || k) + ':</b> ' + msg).join(' &bull; ');
+      html += '<div class="err-row">Row ' + (Number(r)+1) + ': ' + items + '</div>';
+    });
+    sum.innerHTML = html;
+  }
+}
+
+function renderTable() {
+  const c = document.getElementById('tableContainer');
+  if (!rows.length) return;
+
+  let displayHeaders = headers.length ? headers : FIELD_ORDER;
+  let orderedHeaders = [];
+  FIELD_ORDER.forEach(f => { if (displayHeaders.includes(f)) orderedHeaders.push(f); });
+  displayHeaders.forEach(f => { if (!orderedHeaders.includes(f)) orderedHeaders.push(f); });
+
+  let validated = hasValidated;
+
+  let html = '<div class="table-wrap"><table><thead><tr><th class="row-num">#</th>';
+  orderedHeaders.forEach(h => {
+    let rule = RULES[h];
+    let badge = '';
+    if (rule) {
+      if (rule.required) badge = ' <span class="required-badge">*</span>';
+      else if (rule.conditional) badge = ' <span style="color:#f59e0b;font-size:10px">&#9888;</span>';
+      else badge = ' <span class="optional-badge">opt</span>';
+    }
+    html += '<th>' + (rule?.label || h) + badge + '</th>';
+  });
+  html += '</tr></thead><tbody>';
+
+  rows.forEach((row, rIdx) => {
+    let hasErr = cellErrors[rIdx] && Object.keys(cellErrors[rIdx]).length > 0;
+    html += '<tr class="' + (hasErr ? 'has-error' : '') + '"><td class="row-num">' + (rIdx+1) + '</td>';
+    orderedHeaders.forEach(key => {
+      let err = cellErrors[rIdx]?.[key];
+      let isAuto = autocorrectedCells[rIdx] && autocorrectedCells[rIdx].has(key);
+      let cls = '';
+      if (err) cls = 'cell-err';
+      else if (isAuto && validated) cls = 'cell-autocorrected';
+      else if (validated) cls = 'cell-ok';
+      let displayVal = row[key] || '';
+      let tooltipHtml = buildTooltip(key, err);
+      html += '<td><div class="cell-wrap"><input type="text" class="' + cls + '" data-row="' + rIdx + '" data-col="' + key + '" value="' + escapeAttr(displayVal) + '">' + tooltipHtml + '</div></td>';
+    });
+    html += '</tr>';
+  });
+  html += '</tbody></table></div>';
+  c.innerHTML = html;
+
+  c.querySelectorAll('input').forEach(input => {
+    input.addEventListener('change', onCellChange);
+    input.addEventListener('input', onCellInput);
+    input.addEventListener('keydown', function(e) {
+      if (e.key === 'Tab') return;
+      if (e.key === 'Enter') { e.preventDefault(); this.blur(); }
+    });
+  });
+}
+
+function escapeAttr(s) {
+  return String(s).replace(/&/g,'&').replace(/"/g,'"').replace(/</g,'<').replace(/>/g,'>');
+}
+
+let hasValidated = false;
+
+function buildTooltip(key, err) {
+  if (!err) return '';
+  let hint = HINTS[key];
+  let parts = [];
+  parts.push('<div class="tip-msg">&#x26A0; ' + escapeHtml(err) + '</div>');
+  if (hint) {
+    parts.push('<div class="tip-rule">' + escapeHtml(hint.rule) + '</div>');
+    parts.push('<div class="tip-hint">' + escapeHtml(hint.fix) + '</div>');
+  }
+  return '<div class="tooltip">' + parts.join('') + '</div>';
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/&/g,'&').replace(/</g,'<').replace(/>/g,'>');
+}
+
+function onCellInput(e) {
+  if (!hasValidated) return;
+  const r = parseInt(e.target.dataset.row);
+  const k = e.target.dataset.col;
+  let val = e.target.value;
+  if (k === 'business_type') val = val.toUpperCase();
+  if (k === 'incharge_sex') {
+    let up = val.toUpperCase();
+    if (up === 'MALE') val = 'M'; else if (up === 'FEMALE') val = 'F'; else val = up.charAt(0);
+  }
+  if (k === 'cellphone_no') val = val.replace(/[^\d]/g, '');
+  if (k === 'incharge_extension_name') val = val.replace(/\./g, '');
+  if (DATE_FIELDS.includes(k)) val = formatDateStr(val);
+  rows[r][k] = val;
+  if (val !== e.target.value) e.target.value = val;
+  runLiveValidation(r, k, e.target);
+}
+
+function onCellChange(e) {
+  const r = parseInt(e.target.dataset.row);
+  const k = e.target.dataset.col;
+  let val = e.target.value;
+  if (k === 'business_type') val = val.toUpperCase();
+  if (k === 'incharge_sex') {
+    let up = val.toUpperCase();
+    if (up === 'MALE') val = 'M'; else if (up === 'FEMALE') val = 'F'; else val = up.charAt(0);
+  }
+  if (k === 'cellphone_no') val = val.replace(/[^\d]/g, '');
+  if (k === 'incharge_extension_name') val = val.replace(/\./g, '');
+  if (DATE_FIELDS.includes(k)) val = formatDateStr(val);
+  rows[r][k] = val;
+  e.target.value = val;
+  if (!hasValidated) return;
+  runLiveValidation(r, k, e.target);
+}
+
+function runLiveValidation(changedRow, changedKey, changedInput) {
+  let totalErrors = 0;
+  let seenBins = new Set();
+  rows.forEach((row, idx) => {
+    let errs = validateRow(row, idx, seenBins);
+    if (Object.keys(errs).length > 0) {
+      cellErrors[idx] = errs;
+      totalErrors += Object.keys(errs).length;
+    } else {
+      delete cellErrors[idx];
+    }
+  });
+  updateStatus(totalErrors);
+  updateRowVisuals(changedRow, changedInput);
+}
+
+function updateRowVisuals(rowIdx, changedInput) {
+  let container = document.getElementById('tableContainer');
+  let rowInputs = container.querySelectorAll('input[data-row="' + rowIdx + '"]');
+  let rowTr = (rowInputs.length > 0 ? rowInputs[0].closest('tr') : null);
+
+  if (rowTr) {
+    let hasErr = cellErrors[rowIdx] && Object.keys(cellErrors[rowIdx]).length > 0;
+    rowTr.className = hasErr ? 'has-error' : '';
+  }
+
+  rowInputs.forEach(input => {
+    let key = input.dataset.col;
+    let err = cellErrors[rowIdx]?.[key];
+    let isAuto = autocorrectedCells[rowIdx] && autocorrectedCells[rowIdx].has(key);
+
+    input.className = '';
+    if (err) input.classList.add('cell-err');
+    else if (isAuto) input.classList.add('cell-autocorrected');
+    else input.classList.add('cell-ok');
+
+    let wrap = input.closest('.cell-wrap');
+    let oldTip = wrap.querySelector('.tooltip');
+    if (oldTip) oldTip.remove();
+    let newTip = buildTooltip(key, err);
+    if (newTip) wrap.insertAdjacentHTML('beforeend', newTip);
+  });
+}
+
+function exportCSV() {
+  let exportRows = rows.map(row => {
+    let out = {};
+    headers.forEach(h => {
+      let val = row[h] != null ? String(row[h]).trim() : '';
+      if (DATE_FIELDS.includes(h) && val && /^\d{2}\/\d{2}\/\d{4}$/.test(val)) {
+        let parts = val.split('/');
+        if (parts[0].startsWith('0') || parts[1].startsWith('0')) {
+          val = "'" + val;
+        }
+      }
+      out[h] = val;
+    });
+    return out;
+  });
+
+  let csv = Papa.unparse(exportRows, { columns: headers });
+  let BOM = '\uFEFF';
+  let blob = new Blob([BOM + csv], { type: 'text/csv;charset=utf-8;' });
+  let link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = 'validated_table2_business_activity.csv';
+  link.click();
+  URL.revokeObjectURL(link.href);
+}
+
+document.getElementById('csvFile').addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  Papa.parse(file, {
+    header: true,
+    skipEmptyLines: true,
+    complete: (results) => {
+      headers = results.meta.fields || [];
+      rows = results.data.map(r => formatRow({...r}));
+      cellErrors = {};
+      autocorrectedCells = {};
+      hasValidated = false;
+      document.getElementById('validateBtn').disabled = false;
+      document.getElementById('autocorrectBtn').disabled = false;
+      let s = document.getElementById('status');
+      s.className = 'status-info';
+      s.textContent = 'Loaded ' + rows.length + ' rows x ' + headers.length + ' columns. Click "Auto-Correct" then "Validate".';
+      document.getElementById('errorSummary').style.display = 'none';
+      document.getElementById('autocorrectLog').style.display = 'none';
+      document.getElementById('exportBtn').style.display = 'none';
+      document.getElementById('revalidateBtn').style.display = 'none';
+      renderTable();
+    }
+  });
+});
+
+document.getElementById('autocorrectBtn').addEventListener('click', runAutoCorrect);
+document.getElementById('validateBtn').addEventListener('click', validateAll);
+document.getElementById('revalidateBtn').addEventListener('click', validateAll);
+document.getElementById('exportBtn').addEventListener('click', exportCSV);
+</script>
+</body>
+</html>

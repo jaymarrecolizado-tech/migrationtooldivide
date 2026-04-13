@@ -177,7 +177,7 @@ const schemas = {
   tdn_no: { required: false, conditional: true, label: 'TDN No.', min: 3, max: 20 },
   pin_no: { required: false, conditional: true, label: 'PIN No.', min: 3, max: 20 },
   lessor_name: { required: false, conditional: true, label: 'Lessor Name', min: 3, max: 150 },
-  monthly_rental: { required: false, conditional: true, label: 'Monthly Rental' },
+  monthly_rental: { required: false, conditional: true, label: 'Monthly Rental', numeric: true },
   area: { required: true, label: 'Area', numeric: true },
   no_of_male_employees: { required: true, label: 'Male Employees', numeric: true },
   no_of_female_employees: { required: true, label: 'Female Employees', numeric: true },
@@ -671,8 +671,9 @@ function validateSingleRow(row, rowIdx, seenLists) {
       if (rule.max && val.length > rule.max) errs[k] = `Max ${rule.max} chars`;
       if (rule.allowed && !rule.allowed.includes(val)) errs[k] = `Allowed: ${rule.allowed.join(', ')}`;
       if (rule.numeric) {
-        let n = Number(val.replace(/[^\d.\-]/g, ''));
-        if (isNaN(n)) errs[k] = 'Must be a number';
+        if (!/^\d+(\.\d+)?$/.test(val)) {
+            errs[k] = 'Must be numbers only';
+        }
       }
       let df = schemas[activeTableId].DATE_FIELDS || [];
       if (df.includes(k)) {
@@ -765,6 +766,10 @@ document.getElementById('autocorrectBtn').addEventListener('click', () => {
       if (rule && rule.allowed && orig) {
          let upper = orig.toUpperCase().trim();
          if (rule.allowed.includes(upper)) fixed = upper;
+      }
+      if (rule && rule.numeric && fixed) {
+         let nStr = fixed.replace(/[^\d.\-]/g, '');
+         if (nStr !== fixed && nStr !== '') fixed = nStr;
       }
       if (fixed !== orig) {
          fixes.push(`${k}: formatted`);

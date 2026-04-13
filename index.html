@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BPLS Universal Migration Validator</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#f8fafc;padding:20px;color:#0f172a}
+.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+h2{color:#1e293b;font-size:24px;display:flex;align-items:center;gap:10px}
+.badge{background:#4361ee;color:white;font-size:12px;padding:3px 8px;border-radius:12px}
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:15px;background:#fff;padding:16px;border-radius:10px;box-shadow:0 2px 4px rgba(0,0,0,.05)}
+.toolbar label{font-weight:600;font-size:14px;color:#475569;margin-right:10px}
+.toolbar select, .toolbar input[type=file]{padding:8px;border:1px solid #cbd5e1;border-radius:6px;font-size:14px}
+.btn{padding:9px 18px;border:none;border-radius:6px;font-size:14px;font-weight:600;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:6px}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn-primary{background:#4361ee;color:#fff}
+.btn-primary:hover:not(:disabled){background:#3a56d4}
+.btn-success{background:#10b981;color:#fff}
+.btn-success:hover:not(:disabled){background:#059669}
+.btn-warning{background:#f59e0b;color:#fff}
+.btn-warning:hover:not(:disabled){background:#d97706}
+.btn-outline{background:transparent;border:1px solid #4361ee;color:#4361ee}
+.btn-outline:hover:not(:disabled){background:#eff6ff}
+#status{padding:12px 16px;border-radius:8px;font-size:14px;font-weight:500;margin-bottom:15px;transition:all .3s}
+.status-info{background:#eff6ff;color:#1d4ed8;border-left:4px solid #3b82f6}
+.status-ok{background:#ecfdf5;color:#047857;border-left:4px solid #10b981}
+.status-err{background:#fef2f2;color:#b91c1c;border-left:4px solid #ef4444}
+.status-warn{background:#fffbeb;color:#b45309;border-left:4px solid #f59e0b}
+.panels{display:grid;grid-template-columns:1fr;gap:15px;margin-bottom:15px}
+.panel{background:#fff;border-radius:10px;padding:15px;box-shadow:0 2px 4px rgba(0,0,0,.05);display:none;max-height:250px;overflow-y:auto;border:1px solid #e2e8f0}
+.panel h4{margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.panel.summary h4{color:#ef4444}
+.panel.autocorrect-log h4{color:#1d4ed8}
+.err-row, .ac-row{padding:6px 0;border-bottom:1px solid #f1f5f9;font-size:13px;line-height:1.4}
+.err-row{color:#7f1d1d}
+.ac-row{color:#1e3a8a}
+.table-wrap{overflow:auto;max-height:65vh;background:#fff;border-radius:10px;box-shadow:0 4px 6px rgba(0,0,0,.05);border:1px solid #e2e8f0}
+table{border-collapse:separate;border-spacing:0;font-size:13px;table-layout:auto}
+thead th{background:#f8fafc;color:#334155;padding:10px 12px;position:sticky;top:0;z-index:10;text-align:left;white-space:nowrap;font-weight:600;border-bottom:2px solid #cbd5e1}
+thead th.row-num{width:50px;text-align:center;background:#e2e8f0;position:sticky;left:0;z-index:11}
+tbody td{padding:4px 6px;border-bottom:1px solid #e2e8f0;vertical-align:middle;position:relative}
+tbody td.row-num{background:#f1f5f9;text-align:center;color:#64748b;font-weight:600;font-size:12px;position:sticky;left:0;z-index:9;border-right:1px solid #cbd5e1}
+tbody tr:hover td{background:#f8fafc}
+tbody tr.has-error{background:#fef2f2}
+tbody tr.has-error:hover td:not(.row-num){background:#fee2e2}
+.cell-input{width:100%;border:1px solid transparent;padding:6px 8px;font-size:13px;border-radius:4px;background:transparent;font-family:inherit;min-width:140px;transition:all .15s;color:#0f172a}
+.cell-input:hover{border-color:#cbd5e1;background:#fff}
+.cell-input:focus{outline:none;border-color:#3b82f6;background:#fff;box-shadow:0 0 0 3px rgba(59,130,246,.1)}
+.cell-input.cell-err{border-color:#ef4444;background:#fef2f2;color:#991b1b}
+.cell-input.cell-ok{border-color:#10b981;background:#ecfdf5;color:#065f46}
+.cell-input.cell-autocorrected{border-color:#3b82f6;background:#eff6ff;color:#1e3a8a}
+.legend{display:flex;gap:15px;font-size:13px;color:#475569;margin-top:15px;flex-wrap:wrap;background:#fff;padding:10px 15px;border-radius:8px;border:1px solid #e2e8f0}
+.legend span{display:flex;align-items:center;gap:6px}
+.legend .dot{width:12px;height:12px;border-radius:50%;display:inline-block}
+.dot-err{background:#ef4444}
+.dot-ok{background:#10b981}
+.dot-neutral{background:#cbd5e1}
+.dot-auto{background:#3b82f6}
+/* Modal */
+.modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(15,23,42,.6);backdrop-filter:blur(2px);display:none;z-index:1000;justify-content:center;align-items:center}
+.modal{background:#fff;width:800px;max-width:90vw;border-radius:12px;box-shadow:0 20px 25px -5px rgba(0,0,0,.1);display:flex;flex-direction:column;max-height:90vh}
+.modal-header{padding:16px 20px;border-bottom:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center}
+.modal-title{font-size:18px;font-weight:600}
+.modal-close{background:transparent;border:none;font-size:24px;cursor:pointer;color:#64748b}
+.modal-body{padding:20px;overflow-y:auto;flex:1}
+.modal-footer{padding:16px 20px;border-top:1px solid #e2e8f0;display:flex;justify-content:flex-end;gap:10px}
+textarea.json-editor{width:100%;height:400px;font-family:monospace;font-size:13px;padding:12px;border:1px solid #cbd5e1;border-radius:6px;resize:vertical}
+.tooltip-custom{position:absolute;background:#1e293b;color:#f8fafc;padding:8px 12px;border-radius:6px;font-size:12px;z-index:9999;pointer-events:none;max-width:300px;box-shadow:0 4px 6px rgba(0,0,0,.2);display:none}
+.tooltip-custom .err{color:#fca5a5;font-weight:600}
+.tooltip-custom .rule{color:#fde047;font-size:11px;margin-top:4px}
+.tooltip-custom .hint{color:#86efac;font-size:11px;margin-top:4px;border-top:1px solid #334155;padding-top:4px}
+</style>
+</head>
+<body>
+<div class="header">
+  <h2><span style="font-size:28px">🚀</span> BPLS Universal Migration Validator <span id="tableBadge" class="badge" style="display:none">Detecting...</span></h2>
+  <button class="btn btn-outline" id="rulesBtn">⚙️ Edit Validation Rules</button>
+</div>
+
+<div class="toolbar">
+  <label for="tableSelect">Format:</label>
+  <select id="tableSelect">
+    <option value="auto">Auto-Detect from CSV</option>
+    <option value="table1">Table 1 - Businesses</option>
+    <option value="table2">Table 2 - Business Activity</option>
+    <option value="table3">Table 3 - Application</option>
+    <option value="table4">Table 4 - Application Fee</option>
+  </select>
+  
+  <input type="file" id="csvFile" accept=".csv">
+  
+  <button class="btn btn-warning" id="autocorrectBtn" disabled>🪄 Auto-Correct</button>
+  <button class="btn btn-primary" id="validateBtn" disabled>🔍 Validate Selected</button>
+  <button class="btn btn-success" id="exportBtn" style="display:none" disabled>📥 Export Corrected CSV</button>
+</div>
+
+<div id="status" class="status-info">Upload a CSV file to begin validation.</div>
+
+<div class="panels">
+  <div id="errorSummary" class="panel summary"></div>
+  <div id="autocorrectLog" class="panel autocorrect-log"></div>
+</div>
+
+<div id="tableContainer"></div>
+
+<div class="legend">
+  <span><span class="dot dot-err"></span> Error</span>
+  <span><span class="dot dot-auto"></span> Auto-corrected</span>
+  <span><span class="dot dot-ok"></span> Valid</span>
+  <span><span class="dot dot-neutral"></span> Not validated</span>
+  <span style="color:#ef4444;font-weight:700">*</span> Required
+  <span style="color:#94a3b8">opt</span> Optional
+</div>
+
+<!-- Rules Editor Modal -->
+<div class="modal-overlay" id="rulesModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Validation Rules Editor</div>
+      <button class="modal-close" id="closeModal">&times;</button>
+    </div>
+    <div class="modal-body">
+      <p style="margin-bottom:10px;font-size:14px;color:#475569">You can customize the requirement flags, allowed values, regex, or length constraints for the current active table. Changes are saved locally.</p>
+      <select id="rulesTableSelect" style="margin-bottom:10px;padding:6px;border-radius:4px">
+        <option value="table1">Table 1 (Businesses)</option>
+        <option value="table2">Table 2 (Activity)</option>
+        <option value="table3">Table 3 (Application)</option>
+        <option value="table4">Table 4 (Fee)</option>
+      </select>
+      <textarea id="rulesEditor" class="json-editor"></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" id="resetRules">↺ Reset to Default</button>
+      <button class="btn btn-primary" id="saveRules">💾 Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<div id="customTooltip" class="tooltip-custom"></div>
+
+<script>
+// Load schemas from python build
+const schemas = {
+  table1: {
+    RULES: {
+  bin: { required: true, label: 'BIN' },
+  business_name: { required: true, label: 'Business Name', min: 3, max: 100 },
+  trade_name: { required: false, label: 'Trade Name', min: 3, max: 100 },
+  business_type: {
+    required: true, label: 'Business Type',
+    allowed: ['SOLE PROPRIETORSHIP','ONE PERSON CORPORATION','PARTNERSHIP','CORPORATION','COOPERATIVE']
+  },
+  dti_no: { required: false, conditional: true, label: 'DTI No.', min: 3, max: 30 },
+  dti_registratrion_expiry_date: { required: false, conditional: true, label: 'DTI Expiry Date' },
+  sec_no: { required: false, conditional: true, label: 'SEC No.', min: 3, max: 30 },
+  cda_no: { required: false, conditional: true, label: 'CDA No.', min: 3, max: 30 },
+  tin_no: { required: false, label: 'TIN No.' },
+  email_address: { required: true, label: 'Email Address', min: 3, max: 100 },
+  cellphone_no: { required: true, label: 'Cellphone No.' },
+  telephone_no: { required: false, label: 'Telephone No.', min: 3, max: 20 },
+  incharge_first_name: { required: true, label: 'First Name', min: 3, max: 100 },
+  incharge_middle_name: { required: false, label: 'Middle Name', min: 3, max: 100 },
+  incharge_last_name: { required: true, label: 'Last Name', min: 3, max: 100 },
+  incharge_extension_name: { required: false, label: 'Ext. Name', min: 3, max: 100 },
+  incharge_sex: { required: true, label: 'Sex', allowed: ['M','F'] },
+  incharge_country_of_citizenship: { required: true, label: 'Citizenship', min: 3, max: 100 },
+  incharge_street: { required: false, label: 'Incharge Street', min: 3, max: 100 },
+  incharge_barangay: { required: true, label: 'Incharge Barangay', min: 3, max: 100 },
+  incharge_municipality: { required: true, label: 'Incharge Municipality', min: 3, max: 100 },
+  incharge_province: { required: true, label: 'Incharge Province', min: 3, max: 100 },
+  office_street: { required: false, label: 'Office Street', min: 3, max: 100 },
+  office_barangay_code: { required: true, label: 'Office Brgy Code' },
+  location_owned: { required: true, label: 'Location Owned', allowed: ['0', '1'] },
+  tdn_no: { required: false, conditional: true, label: 'TDN No.', min: 3, max: 20 },
+  pin_no: { required: false, conditional: true, label: 'PIN No.', min: 3, max: 20 },
+  lessor_name: { required: false, conditional: true, label: 'Lessor Name', min: 3, max: 150 },
+  monthly_rental: { required: false, conditional: true, label: 'Monthly Rental' },
+  area: { required: true, label: 'Area', numeric: true },
+  no_of_male_employees: { required: true, label: 'Male Employees', numeric: true },
+  no_of_female_employees: { required: true, label: 'Female Employees', numeric: true },
+  no_of_employees_residing_within_the_area: { required: true, label: 'Residing Employees', numeric: true },
+  no_of_van: { required: true, label: 'Vans', numeric: true },
+  no_of_truck: { required: true, label: 'Trucks', numeric: true },
+  no_of_motorcycle: { required: true, label: 'Motorcycles', numeric: true },
+  activity_type: { required: true, label: 'Activity Type', min: 3, max: 100 }
+},
+    HINTS: {
+  bin: { rule: 'BIN Format: PSGC7-YEAR4-INC7', fix: 'Use format: 7-digit PSGC code + dash + 4-digit year + dash + 7-digit increment. Example: 1400101-2024-0000001' },
+  business_name: { rule: 'Required, 3-100 characters', fix: 'Enter the full registered business name. Must be at least 3 characters, max 100.' },
+  trade_name: { rule: 'Optional, 3-100 characters if provided', fix: 'Leave blank or enter a trade/brand name between 3-100 characters.' },
+  business_type: { rule: 'Must be one of 5 allowed types', fix: 'Use exactly: SOLE PROPRIETORSHIP, ONE PERSON CORPORATION, PARTNERSHIP, CORPORATION, or COOPERATIVE' },
+  dti_no: { rule: 'Required if SOLE PROPRIETORSHIP', fix: 'Enter DTI registration number (3-30 chars). Required when Business Type is SOLE PROPRIETORSHIP.' },
+  dti_registratrion_expiry_date: { rule: 'Required if SOLE PROPRIETORSHIP, format MM/DD/YYYY', fix: 'Enter date as MM/DD/YYYY. Example: 12/31/2025. Required when Business Type is SOLE PROPRIETORSHIP.' },
+  sec_no: { rule: 'Required for OPC/PARTNERSHIP/CORPORATION', fix: 'Enter SEC registration number (3-30 chars). Required when Business Type is ONE PERSON CORPORATION, PARTNERSHIP, or CORPORATION.' },
+  cda_no: { rule: 'Required if COOPERATIVE', fix: 'Enter CDA registration number (3-30 chars). Required when Business Type is COOPERATIVE.' },
+  tin_no: { rule: 'Optional, numbers and dashes only', fix: 'Enter TIN using digits and dashes only. Example: 123-456-789' },
+  email_address: { rule: 'Required, valid email format', fix: 'Enter a valid email address. Example: business@email.com. Spaces are not allowed.' },
+  cellphone_no: { rule: 'Required, 12 digits starting with 639', fix: 'Enter as 639xxxxxxxxx (12 digits). The system auto-converts 09xx and 9xx formats.' },
+  telephone_no: { rule: 'Optional, 3-20 characters', fix: 'Leave blank or enter landline number between 3-20 characters.' },
+  incharge_first_name: { rule: 'Required, min 3 characters', fix: 'Enter the first name of the person in charge (at least 3 characters).' },
+  incharge_middle_name: { rule: 'Optional, min 3 characters if provided', fix: 'Leave blank or enter middle name (at least 3 characters).' },
+  incharge_last_name: { rule: 'Required, min 3 characters', fix: 'Enter the last name/surname of the person in charge (at least 3 characters).' },
+  incharge_extension_name: { rule: 'Optional, min 3 characters if provided', fix: 'Leave blank or enter extension like JR, SR, III. Periods are auto-removed.' },
+  incharge_sex: { rule: 'Required, must be M or F', fix: 'Enter M for Male or F for Female. The system auto-converts MALE/FEMALE.' },
+  incharge_country_of_citizenship: { rule: 'Required, min 3 characters', fix: 'Enter country of citizenship. Example: Filipino, American, Chinese' },
+  incharge_street: { rule: 'Optional, min 3 characters if provided', fix: 'Leave blank or enter street address (at least 3 characters).' },
+  incharge_barangay: { rule: 'Required, min 3 characters', fix: 'Enter the barangay of the person in charge (at least 3 characters).' },
+  incharge_municipality: { rule: 'Required, min 3 characters', fix: 'Enter the municipality/city of the person in charge (at least 3 characters).' },
+  incharge_province: { rule: 'Required, min 3 characters', fix: 'Enter the province of the person in charge (at least 3 characters).' },
+  office_street: { rule: 'Optional, min 3 characters if provided', fix: 'Leave blank or enter office street address (at least 3 characters).' },
+  office_barangay_code: { rule: 'Required', fix: 'Enter the PSGC barangay code for the business office location.' },
+  location_owned: { rule: 'Required, must be 1 (owned) or 0 (rented)', fix: 'Enter 1 if the business location is owned, or 0 if rented. Auto-converts: yes/true/owned → 1, no/false/rented → 0.' },
+  tdn_no: { rule: 'Required for owned (location_owned=1), 3-20 chars', fix: 'Enter Tax Declaration Number. Required when location is owned, unless PIN is provided.' },
+  pin_no: { rule: 'Required for owned (location_owned=1), 3-20 chars', fix: 'Enter Property Identification Number. Required when location is owned, unless TDN is provided.' },
+  lessor_name: { rule: 'Required for rented (location_owned=0), 3-150 chars', fix: 'Enter the name of the lessor/property owner. Required when location is rented.' },
+  monthly_rental: { rule: 'Required for rented (location_owned=0), non-negative number', fix: 'Enter the monthly rental amount as a whole number. Required when location is rented.' },
+  area: { rule: 'Required, non-negative number', fix: 'Enter the business area in square meters as a whole number.' },
+  no_of_male_employees: { rule: 'Required, non-negative number', fix: 'Enter the count of male employees (whole number, 0 or more).' },
+  no_of_female_employees: { rule: 'Required, non-negative number', fix: 'Enter the count of female employees (whole number, 0 or more).' },
+  no_of_employees_residing_within_the_area: { rule: 'Required, cannot exceed total employees', fix: 'Enter count of employees residing in the business area. Must not exceed Male + Female employees combined.' },
+  no_of_van: { rule: 'Required, non-negative number', fix: 'Enter the number of vans owned/used by the business (whole number, 0 or more).' },
+  no_of_truck: { rule: 'Required, non-negative number', fix: 'Enter the number of trucks owned/used by the business (whole number, 0 or more).' },
+  no_of_motorcycle: { rule: 'Required, non-negative number', fix: 'Enter the number of motorcycles owned/used by the business (whole number, 0 or more).' },
+  activity_type: { rule: 'Required, min 3 characters', fix: 'Enter the type of business activity. Example: Retail, Wholesale, Manufacturing, Food Service' }
+},
+    FIELD_ORDER: [
+  'bin','business_name','trade_name','business_type',
+  'dti_no','dti_registratrion_expiry_date','sec_no','cda_no','tin_no',
+  'email_address','cellphone_no','telephone_no',
+  'incharge_first_name','incharge_middle_name','incharge_last_name','incharge_extension_name',
+  'incharge_sex','incharge_country_of_citizenship','incharge_street',
+  'incharge_barangay','incharge_municipality','incharge_province',
+  'office_street','office_barangay_code','location_owned',
+  'tdn_no','pin_no','lessor_name','monthly_rental',
+  'area','no_of_male_employees','no_of_female_employees',
+  'no_of_employees_residing_within_the_area',
+  'no_of_van','no_of_truck','no_of_motorcycle','activity_type'
+],
+    DATE_FIELDS: ['dti_registratrion_expiry_date']
+  },
+  table2: {
+    RULES: {
+  bin: { required: true, label: 'BIN' },
+  business_line_code: { required: true, label: 'Business Line Code', numeric: true },
+  capital_amount: { required: true, label: 'Capital Amount', numeric: true },
+  gross_amount: { required: true, label: 'Gross Amount', numeric: true },
+  gross_amount_essential: { required: true, label: 'Gross Essential', numeric: true },
+  gross_amount_nonessential: { required: true, label: 'Gross Non-Essential', numeric: true },
+  retired_date: { required: false, label: 'Retired Date' }
+},
+    HINTS: {
+  bin: { rule: 'BIN Format: PSGC7-YEAR4-INC7', fix: 'Use format: 7-digit PSGC code + dash + 4-digit year + dash + 7-digit increment. Example: 1400101-2024-0000001' },
+  business_line_code: { rule: 'Required, numeric', fix: 'Enter a numeric business line code. Must exist in system.' },
+  capital_amount: { rule: 'Required, number', fix: 'Enter capital amount as a number. Use 0 if not applicable.' },
+  gross_amount: { rule: 'Required, number', fix: 'Enter gross amount as a number. Must not be blank.' },
+  gross_amount_essential: { rule: 'Required, number', fix: 'Enter essential gross amount as a number. Must not be blank.' },
+  gross_amount_nonessential: { rule: 'Required, number', fix: 'Enter nonessential gross amount as a number. Must not be blank.' },
+  retired_date: { rule: 'Optional, MM/DD/YYYY', fix: 'Enter date as MM/DD/YYYY. Example: 12/31/2025. Leave blank if not applicable.' }
+},
+    FIELD_ORDER: ['bin','business_line_code','capital_amount','gross_amount','gross_amount_essential','gross_amount_nonessential','retired_date'],
+    DATE_FIELDS: ['retired_date']
+  },
+  table3: {
+    RULES: {
+  business_bin: { required: true, label: 'Business BIN' },
+  application_type: { required: true, label: 'App. Type', allowed: ['N','R','Q'] },
+  application_date: { required: true, label: 'App. Date' },
+  year: { required: true, label: 'Year' },
+  qtr_from: { required: false, label: 'Qtr From', allowed: ['1','2','3','4'] },
+  qtr_to: { required: false, label: 'Qtr To', allowed: ['1','2','3','4'] },
+  amount: { required: true, label: 'Amount', numeric: true },
+  discount: { required: true, label: 'Discount', numeric: true },
+  surcharge: { required: true, label: 'Surcharge', numeric: true },
+  interest: { required: true, label: 'Interest', numeric: true },
+  total: { required: true, label: 'Total', numeric: true },
+  issued_date: { required: true, label: 'Issued Date' },
+  valid_until: { required: true, label: 'Valid Until' },
+  or_no: { required: true, label: 'OR No.' },
+  or_date: { required: true, label: 'OR Date' },
+  permit_no: { required: false, label: 'Permit No.' },
+  barangay_clearance_number: { required: false, label: 'Brgy Clearance No.' },
+  business_plate_number: { required: false, label: 'Plate No.' },
+  mode_of_payment: { required: true, label: 'Payment Mode', allowed: ['ONLINE','MANUAL'] }
+},
+    HINTS: {
+  business_bin: { rule: 'BIN Format: PSGC7-YEAR4-INC7', fix: 'Use format: 7-digit PSGC code + dash + 4-digit year + dash + 7-digit increment. Example: 1400101-2024-0000001' },
+  application_type: { rule: 'Must be N, R, or Q', fix: 'Enter N for NEW, R for RENEWAL, or Q for QUARTERLY. Spaces are auto-stripped, case auto-uppercased.' },
+  application_date: { rule: 'Required, format MM/DD/YYYY', fix: 'Enter date as MM/DD/YYYY. Example: 01/20/2024. Various date formats are auto-converted.' },
+  year: { rule: 'Required, 4-digit year (1900-2100)', fix: 'Enter a 4-digit year. Example: 2024. Must be between 1900 and 2100.' },
+  qtr_from: { rule: 'Optional, must be 1, 2, 3, or 4', fix: 'Enter a quarter number (1-4). Leave blank if not applicable.' },
+  qtr_to: { rule: 'Optional, must be 1-4 and >= Qtr From', fix: 'Enter a quarter number (1-4). Must be greater than or equal to Qtr From if both are provided.' },
+  amount: { rule: 'Required, non-negative number (decimals allowed)', fix: 'Enter the base amount as a number. Non-numeric characters are auto-stripped.' },
+  discount: { rule: 'Required, non-negative number (decimals allowed)', fix: 'Enter the discount amount as a number. Non-numeric characters are auto-stripped.' },
+  surcharge: { rule: 'Required, non-negative number (decimals allowed)', fix: 'Enter the surcharge amount as a number. Non-numeric characters are auto-stripped.' },
+  interest: { rule: 'Required, non-negative number (decimals allowed)', fix: 'Enter the interest amount as a number. Non-numeric characters are auto-stripped.' },
+  total: { rule: 'Required, must equal Amount + Surcharge + Interest - Discount', fix: 'Must equal amount + surcharge + interest - discount. Auto-corrected if blank or wrong when other numeric fields are valid.' },
+  issued_date: { rule: 'Required, format MM/DD/YYYY', fix: 'Enter the issue date as MM/DD/YYYY. Example: 01/20/2024.' },
+  valid_until: { rule: 'Required, format MM/DD/YYYY, must be >= Issued Date', fix: 'Enter the expiration date as MM/DD/YYYY. Must be on or after the Issued Date.' },
+  or_no: { rule: 'Required, alphanumeric, must be unique', fix: 'Enter a unique Official Receipt number (alphanumeric). Example: U12345678. Duplicates are flagged.' },
+  or_date: { rule: 'Required, format MM/DD/YYYY', fix: 'Enter the OR date as MM/DD/YYYY. Example: 01/20/2024.' },
+  permit_no: { rule: 'Optional, alphanumeric if provided', fix: 'Leave blank or enter the permit number (alphanumeric). Example: A-0001.' },
+  barangay_clearance_number: { rule: 'Optional, alphanumeric if provided', fix: 'Leave blank or enter the barangay clearance number (alphanumeric). Example: ABC-123.' },
+  business_plate_number: { rule: 'Optional, alphanumeric if provided', fix: 'Leave blank or enter the business plate number (alphanumeric). Example: AA-0001.' },
+  mode_of_payment: { rule: 'Must be ONLINE or MANUAL', fix: 'Enter ONLINE or MANUAL. Case auto-uppercased. Example: ONLINE.' }
+},
+    FIELD_ORDER: [
+  'business_bin','application_type','application_date','year','qtr_from','qtr_to',
+  'amount','discount','surcharge','interest','total',
+  'issued_date','valid_until','or_no','or_date',
+  'permit_no','barangay_clearance_number','business_plate_number','mode_of_payment'
+],
+    DATE_FIELDS: ['application_date','issued_date','valid_until','or_date']
+  },
+  table4: {
+    RULES: {
+  business_bin: { required: true, label: 'Business BIN' },
+  application_or_no: { required: true, label: 'OR No.' },
+  code: { required: true, label: 'Fee Code', min: 2, max: 20 },
+  description: { required: true, label: 'Description', min: 2, max: 100 },
+  amount: { required: true, label: 'Amount', numeric: true },
+  discount: { required: true, label: 'Discount', numeric: true },
+  Interest: { required: true, label: 'Interest', numeric: true },
+  Surcharge: { required: true, label: 'Surcharge', numeric: true },
+  total: { required: true, label: 'Total', numeric: true },
+  type: { required: true, label: 'Fee Type', allowed: ['LICENSE','PERMIT','SANITARY','GARBAGE','FIXED','OTHER'] },
+  qtr_from: { required: true, label: 'Qtr From', allowed: ['1','2','3','4'] },
+  qtr_to: { required: true, label: 'Qtr To', allowed: ['1','2','3','4'] },
+  year: { required: true, label: 'Year' }
+},
+    HINTS: {
+  business_bin: { rule: 'BIN Format: PSGC7-YEAR4-INC7', fix: 'Use format: 7-digit PSGC code + dash + 4-digit year + dash + 7-digit increment. Example: 0300801-2024-0000001' },
+  application_or_no: { rule: 'Required, non-empty alphanumeric', fix: 'Enter the application OR number. Must be a non-empty alphanumeric string. Example: U12345678' },
+  code: { rule: 'Required, 2-20 alphanumeric characters', fix: 'Enter the fee code (2-20 chars). Spaces will be auto-stripped. Example: GF-01' },
+  description: { rule: 'Required, 2-100 characters', fix: 'Enter a fee description between 2 and 100 characters. Example: Garbage Fee' },
+  amount: { rule: 'Required, non-negative number', fix: 'Enter the fee amount as a number >= 0. Non-numeric characters will be stripped.' },
+  discount: { rule: 'Required, non-negative number', fix: 'Enter the discount as a number >= 0. Default is 0 if none.' },
+  Interest: { rule: 'Required, non-negative number', fix: 'Enter the interest as a number >= 0. Default is 0 if none.' },
+  Surcharge: { rule: 'Required, non-negative number', fix: 'Enter the surcharge as a number >= 0. Default is 0 if none.' },
+  total: { rule: 'Required, must equal Amount + Surcharge + Interest - Discount', fix: 'Total is auto-calculated. If blank or wrong, auto-correct will fix it. Formula: amount + Surcharge + Interest - discount.' },
+  type: { rule: 'Must be one of: LICENSE, PERMIT, SANITARY, GARBAGE, FIXED, OTHER', fix: 'Enter the fee type. Will be auto-uppercased. Allowed: LICENSE, PERMIT, SANITARY, GARBAGE, FIXED, OTHER.' },
+  qtr_from: { rule: 'Required, must be 1, 2, 3, or 4', fix: 'Enter the starting quarter (1, 2, 3, or 4).' },
+  qtr_to: { rule: 'Required, must be 1-4 and >= Qtr From', fix: 'Enter the ending quarter (1, 2, 3, or 4). Must be greater than or equal to Qtr From.' },
+  year: { rule: 'Required, 4-digit year (1900-2100)', fix: 'Enter a 4-digit year between 1900 and 2100. Example: 2024' }
+},
+    FIELD_ORDER: ['business_bin','application_or_no','code','description','amount','discount','Interest','Surcharge','total','type','qtr_from','qtr_to','year'],
+    DATE_FIELDS: []
+  }
+};
+
+// Apply saved rules from localStorage
+Object.keys(schemas).forEach(t => {
+  let saved = localStorage.getItem('bpls_rules_' + t);
+  if (saved) {
+    try { schemas[t].RULES = JSON.parse(saved); } catch(e) {}
+  }
+});
+
+
+function customValidateRow(tableId, row, errs, seen) {
+    const g = (k) => (row[k] == null ? '' : String(row[k])).trim();
+    
+    if (tableId === 'table1') {
+        let bin = g('bin');
+        if (bin && !/^\d{7}-\d{4}-\d{7}$/.test(bin)) errs.bin = 'Format: PSGC7-YEAR4-INC7';
+        if (bin && seen.has(bin)) errs.bin = 'Duplicate BIN';
+        else if (bin) seen.add(bin);
+
+        let bt = g('business_type');
+        if (bt === 'SOLE PROPRIETORSHIP') {
+            if (!g('dti_no')) errs.dti_no = 'Required for SOLE PROPRIETORSHIP';
+            if (!g('dti_registratrion_expiry_date')) errs.dti_registratrion_expiry_date = 'Required for SOLE PROPRIETORSHIP';
+        }
+        if (['ONE PERSON CORPORATION','PARTNERSHIP','CORPORATION'].includes(bt) && !g('sec_no')) errs.sec_no = 'Required for ' + bt;
+        if (bt === 'COOPERATIVE' && !g('cda_no')) errs.cda_no = 'Required for COOPERATIVE';
+        
+        let locOwned = g('location_owned');
+        if (locOwned === '1') {
+            if (!g('tdn_no') && !g('pin_no')) {
+                errs.tdn_no = 'Provide TDN or PIN for owned';
+                errs.pin_no = 'Provide TDN or PIN for owned';
+            }
+        }
+        if (locOwned === '0') {
+            if (!g('lessor_name')) errs.lessor_name = 'Required for rented';
+            if (!g('monthly_rental')) errs.monthly_rental = 'Required for rented';
+        }
+        
+        let male = Number(g('no_of_male_employees') || 0);
+        let female = Number(g('no_of_female_employees') || 0);
+        let residing = Number(g('no_of_employees_residing_within_the_area') || 0);
+        if (residing > male + female) errs.no_of_employees_residing_within_the_area = 'Cannot exceed total (' + (male+female) + ')';
+    } 
+    else if (tableId === 'table2') {
+        let bin = g('bin');
+        if (bin && !/^\d{7}-\d{4}-\d{7}$/.test(bin)) errs.bin = 'Format: PSGC7-YEAR4-INC7';
+        if (bin && seen.has(bin)) errs.bin = 'Duplicate BIN';
+        else if (bin) seen.add(bin);
+    }
+    else if (tableId === 'table3') {
+        let bin = g('business_bin');
+        if (bin && !/^\d{7}-\d{4}-\d{7}$/.test(bin)) errs.business_bin = 'Format: PSGC7-YEAR4-INC7';
+        
+        let qf = g('qtr_from'), qt = g('qtr_to');
+        if (qf && qt && Number(qt) < Number(qf)) errs.qtr_to = 'Must be >= Qtr From';
+        
+        let amtN = Number((g('amount')||'0').replace(/[^\d.\-]/g,''));
+        let surN = Number((g('surcharge')||'0').replace(/[^\d.\-]/g,''));
+        let intN = Number((g('interest')||'0').replace(/[^\d.\-]/g,''));
+        let dscN = Number((g('discount')||'0').replace(/[^\d.\-]/g,''));
+        let expected = amtN + surN + intN - dscN;
+        let totalVal = g('total');
+        if (totalVal !== '' && !isNaN(Number(totalVal.replace(/[^\d.\-]/g,'')))) {
+            if (Math.abs(Number(totalVal.replace(/[^\d.\-]/g,'')) - expected) > 0.01) {
+                errs.total = 'Must equal amount + surcharge + interest - discount (' + expected + ')';
+            }
+        }
+        
+        let orNo = g('or_no');
+        if (orNo && seen.has(orNo)) errs.or_no = 'Duplicate OR No.';
+        else if (orNo) seen.add(orNo);
+    }
+    else if (tableId === 'table4') {
+        let bin = g('business_bin');
+        if (bin && !/^\d{7}-\d{4}-\d{7}$/.test(bin)) errs.business_bin = 'Format: PSGC7-YEAR4-INC7';
+        
+        let amtN = Number((g('amount')||'0').replace(/[^\d.\-]/g,''));
+        let surN = Number((g('Surcharge')||'0').replace(/[^\d.\-]/g,''));
+        let intN = Number((g('Interest')||'0').replace(/[^\d.\-]/g,''));
+        let dscN = Number((g('discount')||'0').replace(/[^\d.\-]/g,''));
+        let expected = amtN + surN + intN - dscN;
+        let totalVal = g('total');
+        if (totalVal !== '' && !isNaN(Number(totalVal.replace(/[^\d.\-]/g,'')))) {
+            let expectedRounded = Math.round(expected * 100) / 100;
+            if (Math.abs(Number(totalVal.replace(/[^\d.\-]/g,'')) - expectedRounded) > 0.001) {
+                errs.total = 'Must equal amount + Surcharge + Interest - discount (' + expectedRounded + ')';
+            }
+        }
+
+        let qf = g('qtr_from'), qt = g('qtr_to');
+        if (qf && qt && Number(qt) < Number(qf)) errs.qtr_to = 'Must be >= Qtr From';
+    }
+}
+
+function customAutoCorrect(tableId, row, fixes) {
+    const v = (k) => (row[k] == null ? '' : String(row[k])).trim();
+    if (tableId === 'table1') {
+        let bin = v('bin');
+        if (bin && bin.includes(' ')) { row.bin = bin.replace(/\s+/g, ''); fixes.push('bin: removed spaces'); }
+        
+        let cell = v('cellphone_no');
+        if (cell) {
+            let digits = cell.replace(/[^\d]/g, '');
+            if (digits.startsWith('09') && digits.length === 11) { row.cellphone_no = '639' + digits.substring(2); fixes.push('cellphone_no: converted 09xx to 639xx'); }
+        }
+        
+        let loc = v('location_owned').toLowerCase();
+        if (['yes', 'true', 'owned', '1.0'].includes(loc)) { row.location_owned = '1'; fixes.push('location_owned: converted to 1'); }
+        else if (['no', 'false', 'rented', '0.0'].includes(loc)) { row.location_owned = '0'; fixes.push('location_owned: converted to 0'); }
+        else if (loc !== '1' && loc !== '0' && loc !== '') { row.location_owned = ''; fixes.push('location_owned: cleared invalid'); }
+    }
+    if (tableId === 'table3') {
+        let amtN = Number(v('amount').replace(/[^\d.\-]/g,'') || 0);
+        let surN = Number(v('surcharge').replace(/[^\d.\-]/g,'') || 0);
+        let intN = Number(v('interest').replace(/[^\d.\-]/g,'') || 0);
+        let dscN = Number(v('discount').replace(/[^\d.\-]/g,'') || 0);
+        let expectedTotal = amtN + surN + intN - dscN;
+        let currentTotal = v('total').replace(/[^\d.\-]/g,'');
+        if (!isNaN(amtN) && !isNaN(surN) && !isNaN(intN) && !isNaN(dscN)) {
+            if (currentTotal === '' || Number(currentTotal) !== expectedTotal) {
+                row.total = expectedTotal.toString();
+                fixes.push('total: auto-calculated');
+            }
+        }
+    }
+    if (tableId === 'table4') {
+        let amtN = Number(v('amount').replace(/[^\d.\-]/g,'') || 0);
+        let surN = Number(v('Surcharge').replace(/[^\d.\-]/g,'') || 0);
+        let intN = Number(v('Interest').replace(/[^\d.\-]/g,'') || 0);
+        let dscN = Number(v('discount').replace(/[^\d.\-]/g,'') || 0);
+        let expectedTotal = Math.round((amtN + surN + intN - dscN) * 100) / 100;
+        let currentTotal = v('total').replace(/[^\d.\-]/g,'');
+        if (!isNaN(amtN) && !isNaN(surN) && !isNaN(intN) && !isNaN(dscN)) {
+            if (currentTotal === '' || Number(currentTotal) !== expectedTotal) {
+                row.total = String(expectedTotal);
+                fixes.push('total: auto-calculated');
+            }
+        }
+    }
+}
+
+
+let activeTableId = null;
+let headers = [];
+let rows = [];
+let cellErrors = {};
+let autocorrectedCells = {};
+let hasValidated = false;
+
+function detectTableType(csvHeaders) {
+  let joined = csvHeaders.join(',').toLowerCase();
+  if (joined.includes('dti_no') || joined.includes('business_type')) return 'table1';
+  if (joined.includes('business_line_code')) return 'table2';
+  if (joined.includes('application_type')) return 'table3';
+  if (joined.includes('application_or_no') || joined.includes('fee_code') || joined.includes('type')) return 'table4';
+  return 'table1'; // Default
+}
+
+document.getElementById('csvFile').addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  
+  let forcedType = document.getElementById('tableSelect').value;
+  
+  Papa.parse(file, {
+    header: true,
+    skipEmptyLines: true,
+    complete: (results) => {
+      headers = results.meta.fields || [];
+      activeTableId = forcedType === 'auto' ? detectTableType(headers) : forcedType;
+      
+      document.getElementById('tableBadge').textContent = 'Mode: ' + activeTableId.toUpperCase();
+      document.getElementById('tableBadge').style.display = 'inline-block';
+      
+      rows = results.data;
+      cellErrors = {};
+      autocorrectedCells = {};
+      hasValidated = false;
+      
+      document.getElementById('validateBtn').disabled = false;
+      document.getElementById('autocorrectBtn').disabled = false;
+      document.getElementById('exportBtn').classList.remove('btn-success');
+      document.getElementById('exportBtn').style.display = 'none';
+      
+      updateStatusUI(0, 'Loaded ' + rows.length + ' rows. Detected as ' + activeTableId.toUpperCase() + '. Click Auto-Correct or Validate.');
+      document.getElementById('errorSummary').style.display = 'none';
+      document.getElementById('autocorrectLog').style.display = 'none';
+      
+      renderTable();
+    }
+  });
+});
+
+function escapeHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function renderTable() {
+  const c = document.getElementById('tableContainer');
+  if (!rows.length || !activeTableId) return;
+
+  let schema = schemas[activeTableId];
+  let displayHeaders = headers.length ? headers : schema.FIELD_ORDER;
+  let orderedHeaders = [];
+  schema.FIELD_ORDER.forEach(f => { if (displayHeaders.includes(f)) orderedHeaders.push(f); });
+  displayHeaders.forEach(f => { if (!orderedHeaders.includes(f)) orderedHeaders.push(f); });
+
+  let html = '<div class="table-wrap"><table><thead><tr><th class="row-num">#</th>';
+  orderedHeaders.forEach(h => {
+    let rule = schema.RULES[h];
+    let badge = rule && rule.required ? '<span style="color:#ef4444">*</span>' : (!rule ? '' : '<span style="color:#94a3b8;font-size:10px">opt</span>');
+    html += '<th>' + (rule?.label || h) + ' ' + badge + '</th>';
+  });
+  html += '</tr></thead><tbody>';
+
+  rows.forEach((row, rIdx) => {
+    let hasErr = cellErrors[rIdx] && Object.keys(cellErrors[rIdx]).length > 0;
+    html += '<tr class="' + (hasErr ? 'has-error' : '') + '"><td class="row-num">' + (rIdx+1) + '</td>';
+    orderedHeaders.forEach(key => {
+      let err = cellErrors[rIdx]?.[key];
+      let isAuto = autocorrectedCells[rIdx] && autocorrectedCells[rIdx].has(key);
+      let cls = 'cell-input';
+      if (err) cls += ' cell-err';
+      else if (isAuto && hasValidated) cls += ' cell-autocorrected';
+      else if (hasValidated) cls += ' cell-ok';
+      let displayVal = row[key] || '';
+      
+      html += `<td><input type="text" class="${cls}" data-row="${rIdx}" data-col="${key}" value="${escapeHtml(displayVal)}"></td>`;
+    });
+    html += '</tr>';
+  });
+  html += '</tbody></table></div>';
+  c.innerHTML = html;
+
+  c.querySelectorAll('.cell-input').forEach(input => {
+    input.addEventListener('input', e => {
+      let r = e.target.dataset.row, k = e.target.dataset.col;
+      rows[r][k] = e.target.value;
+      if (hasValidated) runLiveValidation(r, k, e.target);
+    });
+    input.addEventListener('change', e => {
+      if (hasValidated) runLiveValidation(e.target.dataset.row, e.target.dataset.col, e.target);
+    });
+    input.addEventListener('mouseenter', e => showTooltip(e.target));
+    input.addEventListener('mouseleave', hideTooltip);
+  });
+}
+
+const tipEl = document.getElementById('customTooltip');
+function showTooltip(input) {
+  let r = input.dataset.row;
+  let k = input.dataset.col;
+  let err = cellErrors[r]?.[k];
+  if (!err) return;
+  
+  let hint = schemas[activeTableId].HINTS[k];
+  let html = `<div class="err">⚠️ ${escapeHtml(err)}</div>`;
+  if (hint) {
+    if(hint.rule) html += `<div class="rule">${escapeHtml(hint.rule)}</div>`;
+    if(hint.fix) html += `<div class="hint">Fix: ${escapeHtml(hint.fix)}</div>`;
+  }
+  tipEl.innerHTML = html;
+  tipEl.style.display = 'block';
+  let rect = input.getBoundingClientRect();
+  tipEl.style.left = Math.min(rect.left, window.innerWidth - 300) + 'px';
+  tipEl.style.top = (rect.bottom + 5) + 'px';
+}
+function hideTooltip() { tipEl.style.display = 'none'; }
+
+function runLiveValidation(changedRow, changedKey, inputEl) {
+  let allErrs = 0;
+  let seenLists = { bin: new Set(), or: new Set() };
+  rows.forEach((row, idx) => {
+    let errs = validateSingleRow(row, idx, seenLists);
+    if (Object.keys(errs).length > 0) {
+      cellErrors[idx] = errs;
+      allErrs += Object.keys(errs).length;
+    } else { delete cellErrors[idx]; }
+  });
+  
+  updateStatusUI(allErrs);
+  
+  let tr = inputEl.closest('tr');
+  let hasRowErr = cellErrors[changedRow] !== undefined;
+  tr.className = hasRowErr ? 'has-error' : '';
+  
+  tr.querySelectorAll('.cell-input').forEach(inp => {
+    let k = inp.dataset.col;
+    let err = cellErrors[changedRow]?.[k];
+    let isAuto = autocorrectedCells[changedRow] && autocorrectedCells[changedRow].has(k);
+    inp.className = 'cell-input' + (err ? ' cell-err' : (isAuto ? ' cell-autocorrected' : ' cell-ok'));
+  });
+}
+
+function formatDate(raw) {
+  if (!raw || !raw.trim()) return '';
+  let s = raw.trim().replace(/^'+/, '');
+  let formatted = '';
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(s)) {
+      formatted = s;
+  } else {
+      let d = new Date(s);
+      if (isNaN(d.getTime())) return raw;
+      formatted = String(d.getMonth()+1).padStart(2,'0') + '/' + String(d.getDate()).padStart(2,'0') + '/' + d.getFullYear();
+  }
+  if (formatted.startsWith('0')) return "'" + formatted;
+  return formatted;
+}
+
+function validateSingleRow(row, rowIdx, seenLists) {
+  let errs = {};
+  let schema = schemas[activeTableId].RULES;
+  
+  Object.keys(schema).forEach(k => {
+    let rule = schema[k];
+    let val = (row[k] == null ? '' : String(row[k])).trim();
+    
+    if (rule.required && val === '') { errs[k] = 'Required'; return; }
+    if (val !== '') {
+      if (rule.min && val.length < rule.min) errs[k] = `Min ${rule.min} chars`;
+      if (rule.max && val.length > rule.max) errs[k] = `Max ${rule.max} chars`;
+      if (rule.allowed && !rule.allowed.includes(val)) errs[k] = `Allowed: ${rule.allowed.join(', ')}`;
+      if (rule.numeric) {
+        let n = Number(val.replace(/[^\d.\-]/g, ''));
+        if (isNaN(n)) errs[k] = 'Must be a number';
+      }
+      let df = schemas[activeTableId].DATE_FIELDS || [];
+      if (df.includes(k)) {
+        let cleanVal = val.replace(/^'+/, '');
+        if (!/^\d{2}\/\d{2}\/\d{4}$/.test(cleanVal)) {
+            errs[k] = "Invalid format. Use MM/DD/YYYY";
+        } else {
+            let d = new Date(cleanVal);
+            if (isNaN(d.getTime())) {
+                errs[k] = 'Invalid Date';
+            } else {
+                let y = d.getFullYear();
+                if (y < 1900 || y > 2100) errs[k] = 'Year out of range (1900-2100)';
+                if (cleanVal.startsWith('0') && !val.startsWith("'0")) {
+                    errs[k] = "Leading zero months must start with apostrophe (e.g. '03/15/2026)";
+                }
+            }
+        }
+      }
+    }
+  });
+
+  customValidateRow(activeTableId, row, errs, seenLists.bin);
+  
+  return errs;
+}
+
+document.getElementById('validateBtn').addEventListener('click', () => {
+  hasValidated = true;
+  cellErrors = {};
+  let errCount = 0;
+  let seenLists = { bin: new Set(), or: new Set() };
+  
+  rows.forEach((row, idx) => {
+    let errs = validateSingleRow(row, idx, seenLists);
+    if (Object.keys(errs).length > 0) {
+      cellErrors[idx] = errs;
+      errCount += Object.keys(errs).length;
+    }
+  });
+  
+  renderTable();
+  updateStatusUI(errCount);
+  
+  document.getElementById('exportBtn').style.display = 'inline-flex';
+  document.getElementById('exportBtn').disabled = false;
+});
+
+function updateStatusUI(errCount, defaultMsg = null) {
+  const s = document.getElementById('status');
+  const sum = document.getElementById('errorSummary');
+  if (defaultMsg) {
+    s.className = 'status-info';
+    s.innerHTML = defaultMsg;
+  } else if (errCount === 0) {
+    s.className = 'status-ok';
+    s.innerHTML = `✅ All ${rows.length} rows valid. Ready for export.`;
+    sum.style.display = 'none';
+  } else {
+    s.className = 'status-err';
+    s.innerHTML = `❌ Found ${errCount} error(s) across ${Object.keys(cellErrors).length} row(s). Hover over red cells to see fixes.`;
+    sum.style.display = 'block';
+    
+    let html = '<h4><span style="font-size:16px">⚠</span> Error Summary (' + errCount + ')</h4>';
+    Object.entries(cellErrors).forEach(([r, errs]) => {
+      let errStr = Object.entries(errs).map(([k,v]) => `<b>${k}</b>: ${v}`).join(' | ');
+      html += `<div class="err-row">Row ${(Number(r)+1)}: ${errStr}</div>`;
+    });
+    sum.innerHTML = html;
+  }
+}
+
+document.getElementById('autocorrectBtn').addEventListener('click', () => {
+  autocorrectedCells = {};
+  let fixesTotal = 0;
+  let logHtml = '<h4>🪄 Auto-Correct Log</h4>';
+  
+  let df = schemas[activeTableId] && schemas[activeTableId].DATE_FIELDS ? schemas[activeTableId].DATE_FIELDS : [];
+  
+  rows.forEach((row, idx) => {
+    let fixes = [];
+    
+    Object.keys(row).forEach(k => {
+      let orig = String(row[k]||'').trim();
+      let fixed = orig;
+      if (df.includes(k) && orig) {
+         fixed = formatDate(orig);
+      }
+      let rule = schemas[activeTableId].RULES[k];
+      if (rule && rule.allowed && orig) {
+         let upper = orig.toUpperCase().trim();
+         if (rule.allowed.includes(upper)) fixed = upper;
+      }
+      if (fixed !== orig) {
+         fixes.push(`${k}: formatted`);
+         row[k] = fixed;
+      }
+    });
+    
+    customAutoCorrect(activeTableId, row, fixes);
+    
+    if (fixes.length > 0) {
+      autocorrectedCells[idx] = new Set(fixes.map(f => f.split(':')[0]));
+      fixesTotal += fixes.length;
+      logHtml += `<div class="ac-row"><b>Row ${(idx+1)}:</b> ${fixes.join(', ')}</div>`;
+    }
+  });
+  
+  let logEl = document.getElementById('autocorrectLog');
+  if (fixesTotal > 0) {
+    logEl.style.display = 'block';
+    logEl.innerHTML = logHtml;
+  } else {
+    logEl.style.display = 'none';
+    alert('No fixable logic issues found for auto-correction.');
+  }
+  
+  hasValidated = true;
+  cellErrors = {};
+  let errCount = 0;
+  let seenLists = { bin: new Set(), or: new Set() };
+  rows.forEach((row, idx) => {
+    let errs = validateSingleRow(row, idx, seenLists);
+    if (Object.keys(errs).length > 0) {
+      cellErrors[idx] = errs;
+      errCount += Object.keys(errs).length;
+    }
+  });
+  
+  renderTable();
+  updateStatusUI(errCount);
+  
+  if (fixesTotal > 0) {
+    let s = document.getElementById('status');
+    s.innerHTML = `<b>🪄 Applied ${fixesTotal} fixes and re-validated.</b> ` + s.innerHTML;
+  }
+  
+  document.getElementById('exportBtn').style.display = 'inline-flex';
+  document.getElementById('exportBtn').disabled = false;
+});
+
+document.getElementById('exportBtn').addEventListener('click', () => {
+  let finalRows = rows.map(r => {
+    let out = {};
+    headers.forEach(h => {
+      let v = String(r[h] || '').trim();
+      if (v.startsWith('0') && !/^\d+$/.test(v)) v = "'" + v;
+      out[h] = v;
+    });
+    return out;
+  });
+  
+  let csv = Papa.unparse(finalRows, { columns: headers });
+  let blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+  let link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = 'validated_' + activeTableId + '_' + Date.now() + '.csv';
+  link.click();
+});
+
+// Rules Editor Logic
+const modal = document.getElementById('rulesModal');
+const rulesSelect = document.getElementById('rulesTableSelect');
+const rulesEditor = document.getElementById('rulesEditor');
+
+document.getElementById('rulesBtn').addEventListener('click', () => {
+  rulesSelect.value = activeTableId || 'table1';
+  loadEditorRules();
+  modal.style.display = 'flex';
+});
+
+document.getElementById('closeModal').addEventListener('click', () => modal.style.display='none');
+
+rulesSelect.addEventListener('change', loadEditorRules);
+
+function loadEditorRules() {
+  let val = rulesSelect.value;
+  rulesEditor.value = JSON.stringify(schemas[val].RULES, null, 2);
+}
+
+document.getElementById('saveRules').addEventListener('click', () => {
+  try {
+    let newRules = JSON.parse(rulesEditor.value);
+    schemas[rulesSelect.value].RULES = newRules;
+    localStorage.setItem('bpls_rules_' + rulesSelect.value, JSON.stringify(newRules));
+    alert('✅ Rules saved successfully for ' + rulesSelect.value + '!');
+    if(activeTableId === rulesSelect.value && rows.length > 0) document.getElementById('validateBtn').click();
+  } catch(e) {
+    alert('❌ Invalid JSON syntax. Please check your formatting.');
+  }
+});
+
+document.getElementById('resetRules').addEventListener('click', () => {
+  if(confirm('Reset ' + rulesSelect.value + ' validation rules to system defaults?')) {
+    localStorage.removeItem('bpls_rules_' + rulesSelect.value);
+    alert('To fully apply defaults, please reload the page.');
+    location.reload();
+  }
+});
+</script>
+</body>
+</html>

@@ -14,6 +14,28 @@ let currentPage = 1;
 const rowsPerPage = 100;
 let pendingDuplicates = []; // Array of { table, key, rowIndices }
 
+// ── INPUT MASK HELPERS ──
+// TIN format: 000-000-000-00000  (3-3-3-5 digits, max 17 chars)
+function applyTINMask(val) {
+    let d = val.replace(/\D/g, '').substring(0, 14);
+    let out = d.substring(0, 3);
+    if (d.length > 3)  out += '-' + d.substring(3, 6);
+    if (d.length > 6)  out += '-' + d.substring(6, 9);
+    if (d.length > 9)  out += '-' + d.substring(9, 14);
+    return out;
+}
+// PIN format: 000-00-000-00-000  (3-2-3-2-3 digits, max 17 chars)
+function applyPINMask(val) {
+    let d = val.replace(/\D/g, '').substring(0, 13);
+    let out = d.substring(0, 3);
+    if (d.length > 3)  out += '-' + d.substring(3, 5);
+    if (d.length > 5)  out += '-' + d.substring(5, 8);
+    if (d.length > 8)  out += '-' + d.substring(8, 10);
+    if (d.length > 10) out += '-' + d.substring(10, 13);
+    return out;
+}
+
+
 // Dark mode logic
 let isDark = false;
 document.getElementById('themeBtn').addEventListener('click', () => {
@@ -169,7 +191,9 @@ function renderTable() {
                 // ── MASKED TEXT INPUT ──
                 let maxLen = rule.max || '';
                 if (key === 'cellphone_no') maxLen = '13';
-                if (key === 'tin_no' || key === 'pin_no') maxLen = '17';
+                if (key === 'tin_no') maxLen = '17';     // 000-000-000-00000
+                if (key === 'pin_no') maxLen = '17';     // 000-00-000-00-000
+                if (key === 'tdn_no') maxLen = '20';     // alphanumeric, free format
                 if (key === 'bin' || key === 'business_bin') maxLen = '19';
                 if (rule.numeric && !maxLen) maxLen = '20';
                 let htmlAttr = maxLen ? ` maxlength="${maxLen}"` : '';
@@ -205,8 +229,14 @@ function renderTable() {
                     e.target.value = e.target.value.replace(/[^\d.\-]/g, '');
                 } else if (k === 'cellphone_no') {
                     e.target.value = e.target.value.replace(/[^\d']/g, '');
-                } else if (k === 'tin_no' || k === 'pin_no' || k === 'bin' || k === 'business_bin') {
+                } else if (k === 'tin_no') {
+                    e.target.value = applyTINMask(e.target.value);
+                } else if (k === 'pin_no') {
+                    e.target.value = applyPINMask(e.target.value);
+                } else if (k === 'bin' || k === 'business_bin') {
                     e.target.value = e.target.value.replace(/[^\d\-]/g, '');
+                } else if (k === 'tdn_no') {
+                    e.target.value = e.target.value.replace(/[^\w\-]/g, '').toUpperCase();
                 } else if (k === 'incharge_extension_name') {
                     e.target.value = e.target.value.replace(/\./g, '');
                 }

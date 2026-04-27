@@ -1543,16 +1543,13 @@ function validateSingleRow(tableId, row, rowIdx, seenLists) {
       }
       let df = schemas[tableId].DATE_FIELDS || [];
       if (df.includes(k)) {
-        let cleanVal = val.replace(/^'+/, '');
-        if (!/^\d{2}\/\d{2}\/\d{4}$/.test(cleanVal)) {
-            errs[k] = "Invalid format. Use MM/DD/YYYY";
+        let dObj = parseRobustDate(val);
+        if (!dObj) {
+            errs[k] = "Invalid Date or Format";
         } else {
-            let d = new Date(cleanVal);
-            if (isNaN(d.getTime())) {
-                errs[k] = 'Invalid Date';
-            } else {
-                let y = d.getFullYear();
-                if (y < 1900 || y > 2100) errs[k] = 'Year out of range (1900-2100)';
+            let cleanVal = val.replace(/^'+/, '');
+            if (!/^\d{2}\/\d{2}\/\d{4}$/.test(cleanVal)) {
+                errs[k] = "Invalid format. Use MM/DD/YYYY (Click Auto-Correct)";
             }
         }
       }

@@ -182,7 +182,63 @@ document.getElementById('themeBtn').addEventListener('click', () => {
     document.getElementById('themeBtn').innerText = isDark ? '☀️ Light Mode' : '🌙 Dark Mode';
 });
 
-// File input logic (Batch)
+// ── LGU SELECTOR LOGIC ──
+document.getElementById('provinceSelect').addEventListener('change', function() {
+    let provKey = this.value;
+    let muniSel = document.getElementById('municipalitySelect');
+    muniSel.innerHTML = '<option value="">-- Select Municipality --</option>';
+    muniSel.disabled = !provKey;
+    document.getElementById('psgcDisplay').style.display = 'none';
+    document.getElementById('lguClearBtn').style.display = 'none';
+    selectedLGU = null;
+
+    if (provKey && REGION2_LGUS[provKey]) {
+        REGION2_LGUS[provKey].municipalities.forEach(m => {
+            let opt = document.createElement('option');
+            opt.value = m.code;
+            opt.textContent = m.name;
+            muniSel.appendChild(opt);
+        });
+    }
+});
+
+document.getElementById('municipalitySelect').addEventListener('change', function() {
+    let muniCode = this.value;
+    let provKey  = document.getElementById('provinceSelect').value;
+    if (!muniCode || !provKey) { selectedLGU = null; return; }
+
+    let psgcPrefix = computePSGCPrefix(provKey, muniCode);
+    let muniName   = REGION2_LGUS[provKey].municipalities.find(m => m.code === muniCode)?.name || '';
+    let provLabel  = REGION2_LGUS[provKey].label;
+
+    selectedLGU = { province: provKey, provinceLabel: provLabel, municipality: muniName, muniCode, psgcPrefix };
+
+    // Show PSGC badge
+    let badge = document.getElementById('psgcBadge');
+    badge.textContent = psgcPrefix;
+    let disp = document.getElementById('psgcDisplay');
+    disp.style.display = 'flex';
+    disp.style.alignItems = 'center';
+    disp.style.gap = '8px';
+    document.getElementById('lguClearBtn').style.display = 'inline';
+
+    // Show confirmation toast
+    document.getElementById('status').textContent =
+        `✅ LGU set: ${muniName}, ${provLabel} — BIN must start with ${psgcPrefix}`;
+    document.getElementById('status').className = 'status-success';
+});
+
+document.getElementById('lguClearBtn').addEventListener('click', () => {
+    document.getElementById('provinceSelect').value = '';
+    document.getElementById('municipalitySelect').innerHTML = '<option value="">-- Select Municipality --</option>';
+    document.getElementById('municipalitySelect').disabled = true;
+    document.getElementById('psgcDisplay').style.display = 'none';
+    document.getElementById('lguClearBtn').style.display = 'none';
+    selectedLGU = null;
+    document.getElementById('status').textContent = 'LGU selection cleared.';
+    document.getElementById('status').className = 'status-info';
+});
+
 document.getElementById('csvFile').addEventListener('change', (e) => {
     const files = e.target.files;
     if (!files.length) return;
@@ -463,7 +519,17 @@ function customValidateRow(tableId, row, errs, seenLists) {
     
     if (tableId === 'table1') {
         let bin = g('bin');
-        if (bin && !/^\d{7}-\d{4}-\d{7}$/.test(bin)) errs.bin = 'Format: PSGC7-YEAR4-INC7';
+        if (bin) {
+            if (!/^\d{7}-\d{4}-\d{7}$/.test(bin)) {
+                errs.bin = 'Format: PSGC7-YEAR4-INC7  e.g. 0201514-2025-0000001';
+            } else if (selectedLGU) {
+                // PSGC prefix check against selected LGU
+                let actualPrefix = bin.substring(0, 7);
+                if (actualPrefix !== selectedLGU.psgcPrefix) {
+                    errs.bin = `PSGC mismatch: expected ${selectedLGU.psgcPrefix} (${selectedLGU.municipality}, ${selectedLGU.provinceLabel}), got ${actualPrefix}`;
+                }
+            }
+        }
         
         let cell = g('cellphone_no');
         if (cell && !/^'?639\d{9}$/.test(cell)) errs.cellphone_no = 'Must be 12 digits starting with 639';
@@ -508,7 +574,16 @@ function customValidateRow(tableId, row, errs, seenLists) {
     else if (tableId === 'table2' || tableId === 'table3' || tableId === 'table4') {
         let binKey = tableId === 'table2' ? 'bin' : 'business_bin';
         let bin = g(binKey);
-        if (bin && !/^\d{7}-\d{4}-\d{7}$/.test(bin)) errs[binKey] = 'Format: PSGC7-YEAR4-INC7';
+        if (bin) {
+            if (!/^\d{7}-\d{4}-\d{7}$/.test(bin)) {
+                errs[binKey] = 'Format: PSGC7-YEAR4-INC7  e.g. 0201514-2025-0000001';
+            } else if (selectedLGU) {
+                let actualPrefix = bin.substring(0, 7);
+                if (actualPrefix !== selectedLGU.psgcPrefix) {
+                    errs[binKey] = `PSGC mismatch: expected ${selectedLGU.psgcPrefix} (${selectedLGU.municipality})  got ${actualPrefix}`;
+                }
+            }
+        }
         
         // CROSS-TABLE REFERENTIAL INTEGRITY
         if (appState['table1'].loaded && appState['table1'].hasValidated) {

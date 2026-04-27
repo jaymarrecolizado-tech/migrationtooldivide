@@ -1,0 +1,5 @@
+business_bin,application_or_no,code,description,amount,discount,Interest,Surcharge,total,type,qtr_from,qtr_to,year
+0201514-2024-0000002,CGYN14915651,C2-AA-S2A-02-D,On retailers,0,0,0,0,0,LICENSE,,,2024
+0201514-2024-0000002,CGYN14915651,C3-AA-S3A-01-A9,Other Businesses,1000,0,0,0,1000,PERMIT,,,2024
+0201514-2024-0000002,CGYN14915651,C4-AD-S4D-01-B,"For each Business, industrial or agricultural establishment",220,0,0,0,220,SANITARY,,,2024
+0201514-2024-0000002,CGYN14915651,C5-AB-S5B-01-D,"Hotel, Apartments and Lodging Houses and other service provider",300,0,0,0,300,GARBAGE,,,2024

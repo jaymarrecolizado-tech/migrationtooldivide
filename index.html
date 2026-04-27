@@ -559,9 +559,9 @@ function renderTable() {
     }
 
     let schema = schemas[activeTableId];
-    let orderedHeaders = [...schema.FIELD_ORDER];
-    st.headers.forEach(f => { if (!orderedHeaders.includes(f)) orderedHeaders.push(f); });
-    st.headers = orderedHeaders; // Ensure exports include the missing columns too
+    // Force the headers to strictly match the Schema, stripping out any garbage columns from the raw CSV
+    st.headers = [...schema.FIELD_ORDER];
+    let orderedHeaders = st.headers;
 
     let totalRows = st.rows.length;
     let totalPages = Math.ceil(totalRows / rowsPerPage);

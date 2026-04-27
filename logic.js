@@ -13,6 +13,144 @@ let activeTableId = 'table1';
 let currentPage = 1;
 const rowsPerPage = 100;
 let pendingDuplicates = []; // Array of { table, key, rowIndices }
+let selectedLGU = null; // { province, municipality, psgcPrefix }
+
+// ── REGION 2 PSGC DATABASE ──
+// BIN PSGC format: '0' + '20'(Region2) + 2-digit-province + 2-digit-municipality
+// Formula: psgcPrefix = '0' + '20' + provinceCode + municipalityCode
+const REGION2_LGUS = {
+    batanes: {
+        label: 'Batanes',
+        code: '09',
+        municipalities: [
+            { name: 'Basco (Capital)', code: '01' },
+            { name: 'Itbayat',         code: '02' },
+            { name: 'Ivana',           code: '03' },
+            { name: 'Mahatao',         code: '04' },
+            { name: 'Sabtang',         code: '05' },
+            { name: 'Uyugan',          code: '06' },
+        ]
+    },
+    cagayan: {
+        label: 'Cagayan',
+        code: '15',
+        municipalities: [
+            { name: 'Abulug',                  code: '01' },
+            { name: 'Alcala',                  code: '02' },
+            { name: 'Allacapan',               code: '03' },
+            { name: 'Amulung',                 code: '04' },
+            { name: 'Aparri',                  code: '05' },
+            { name: 'Baggao',                  code: '06' },
+            { name: 'Ballesteros',             code: '07' },
+            { name: 'Buguey',                  code: '08' },
+            { name: 'Calayan',                 code: '09' },
+            { name: 'Camalaniugan',            code: '10' },
+            { name: 'Claveria',                code: '11' },
+            { name: 'Enrile',                  code: '12' },
+            { name: 'Gattaran',                code: '13' },
+            { name: 'Gonzaga',                 code: '14' }, // ✓ verified from sample data
+            { name: 'Iguig',                   code: '15' },
+            { name: "Lal-lo",                  code: '16' },
+            { name: 'Lasam',                   code: '17' },
+            { name: 'Pamplona',                code: '18' },
+            { name: 'Peñablanca',              code: '19' },
+            { name: 'Piat',                    code: '20' },
+            { name: 'Rizal',                   code: '21' },
+            { name: 'Sanchez-Mira',            code: '22' },
+            { name: 'Santa Ana',               code: '23' },
+            { name: 'Santa Praxedes',          code: '24' },
+            { name: 'Santa Teresita',          code: '25' },
+            { name: 'Santo Niño (Faire)',       code: '26' },
+            { name: 'Solana',                  code: '27' },
+            { name: 'Tuao',                    code: '28' },
+            { name: 'Tuguegarao City',         code: '29' }, // ✓ verified
+        ]
+    },
+    isabela: {
+        label: 'Isabela',
+        code: '31',
+        municipalities: [
+            { name: 'Alicia',              code: '01' },
+            { name: 'Angadanan',           code: '02' },
+            { name: 'Aurora',              code: '03' },
+            { name: 'Benito Soliven',      code: '04' },
+            { name: 'Burgos',              code: '05' },
+            { name: 'Cabagan',             code: '06' },
+            { name: 'Cabatuan',            code: '07' },
+            { name: 'Cauayan City',        code: '08' },
+            { name: 'Cordon',              code: '09' },
+            { name: 'Delfin Albano',       code: '10' },
+            { name: 'Dinapigue',           code: '11' },
+            { name: 'Divilacan',           code: '12' },
+            { name: 'Echague',             code: '13' },
+            { name: 'Gamu',               code: '14' },
+            { name: 'Ilagan City',         code: '15' },
+            { name: 'Jones',               code: '16' },
+            { name: 'Luna',               code: '17' },
+            { name: 'Maconacon',           code: '18' },
+            { name: 'Mallig',              code: '19' },
+            { name: 'Naguilian',           code: '20' },
+            { name: 'Palanan',             code: '21' },
+            { name: 'Quezon',              code: '22' },
+            { name: 'Quirino',             code: '23' },
+            { name: 'Ramon',               code: '24' },
+            { name: 'Reina Mercedes',      code: '25' },
+            { name: 'Roxas',               code: '26' },
+            { name: 'San Agustin',         code: '27' },
+            { name: 'San Guillermo',       code: '28' },
+            { name: 'San Isidro',          code: '29' },
+            { name: 'San Manuel',          code: '30' },
+            { name: 'San Mariano',         code: '31' },
+            { name: 'San Mateo',           code: '32' },
+            { name: 'San Pablo',           code: '33' },
+            { name: 'Santa Maria',         code: '34' },
+            { name: 'Santiago City',       code: '35' }, // ✓ verified
+            { name: 'Santo Tomas',         code: '36' },
+            { name: 'Tumauini',            code: '37' },
+        ]
+    },
+    nueva_vizcaya: {
+        label: 'Nueva Vizcaya',
+        code: '50',
+        municipalities: [
+            { name: 'Alfonso Castañeda', code: '01' },
+            { name: 'Ambaguio',          code: '02' },
+            { name: 'Aritao',            code: '03' },
+            { name: 'Bagabag',           code: '04' },
+            { name: 'Bambang',           code: '05' },
+            { name: 'Bayombong',         code: '06' }, // capital
+            { name: 'Diadi',             code: '07' },
+            { name: 'Dupax del Norte',   code: '08' },
+            { name: 'Dupax del Sur',     code: '09' },
+            { name: 'Kasibu',            code: '10' },
+            { name: 'Kayapa',            code: '11' },
+            { name: 'Quezon',            code: '12' },
+            { name: 'Santa Fe',          code: '13' },
+            { name: 'Solano',            code: '14' },
+            { name: 'Villaverde',        code: '15' },
+        ]
+    },
+    quirino: {
+        label: 'Quirino',
+        code: '57',
+        municipalities: [
+            { name: 'Aglipay',       code: '01' },
+            { name: 'Cabarroguis',   code: '02' }, // capital
+            { name: 'Diffun',        code: '03' },
+            { name: 'Maddela',       code: '04' },
+            { name: 'Nagtipunan',    code: '05' },
+            { name: 'Saguday',       code: '06' },
+        ]
+    }
+};
+
+function computePSGCPrefix(provinceKey, municipalityCode) {
+    if (!provinceKey || !municipalityCode) return null;
+    let prov = REGION2_LGUS[provinceKey];
+    if (!prov) return null;
+    return '0' + '20' + prov.code + municipalityCode;
+}
+
 
 // ── INPUT MASK HELPERS ──
 // TIN format: 999-999-999-999  (3-3-3-3 digits, max 15 chars)

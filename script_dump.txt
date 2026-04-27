@@ -1,0 +1,912 @@
+1:
+2:// --- SCHEMAS INJECTED HERE ---
+3:const schemas = {
+4:  table1: {
+5:    RULES: {
+6:  bin: { required: true, label: 'BIN' },
+7:  business_name: { required: true, label: 'Business Name', min: 3, max: 100 },
+8:  trade_name: { required: false, label: 'Trade Name', min: 3, max: 100 },
+9:  business_type: {
+10:    required: true, label: 'Business Type',
+11:    allowed: ['SOLE PROPRIETORSHIP','ONE PERSON CORPORATION','PARTNERSHIP','CORPORATION','COOPERATIVE']
+12:  },
+13:  dti_no: { required: false, conditional: true, label: 'DTI No.', min: 3, max: 30 },
+14:  dti_registratrion_expiry_date: { required: false, conditional: true, label: 'DTI Expiry Date' },
+15:  sec_no: { required: false, conditional: true, label: 'SEC No.', min: 3, max: 30 },
+16:  cda_no: { required: false, conditional: true, label: 'CDA No.', min: 3, max: 30 },
+17:  tin_no: { required: false, label: 'TIN No.' },
+18:  email_address: { required: true, label: 'Email Address', min: 3, max: 100 },
+19:  cellphone_no: { required: true, label: 'Cellphone No.' },
+20:  telephone_no: { required: false, label: 'Telephone No.', min: 3, max: 20 },
+21:  incharge_first_name: { required: true, label: 'First Name', min: 3, max: 100 },
+22:  incharge_middle_name: { required: false, label: 'Middle Name', min: 3, max: 100 },
+23:  incharge_last_name: { required: true, label: 'Last Name', min: 3, max: 100 },
+24:  incharge_extension_name: { required: false, label: 'Ext. Name', min: 3, max: 100 },
+25:  incharge_sex: { required: true, label: 'Sex', allowed: ['M','F'] },
+26:  incharge_country_of_citizenship: { required: true, label: 'Citizenship', min: 3, max: 100 },
+27:  incharge_street: { required: false, label: 'Incharge Street', min: 3, max: 100 },
+28:  incharge_barangay: { required: true, label: 'Incharge Barangay', min: 3, max: 100 },
+29:  incharge_municipality: { required: true, label: 'Incharge Municipality', min: 3, max: 100 },
+30:  incharge_province: { required: true, label: 'Incharge Province', min: 3, max: 100 },
+31:  office_street: { required: false, label: 'Office Street', min: 3, max: 100 },
+32:  office_barangay_code: { required: true, label: 'Office Brgy Code' },
+33:  location_owned: { required: true, label: 'Location Owned', allowed: ['0', '1'] },
+34:  tdn_no: { required: false, conditional: true, label: 'TDN No.', min: 3, max: 20 },
+35:  pin_no: { required: false, conditional: true, label: 'PIN No.', min: 3, max: 20 },
+36:  lessor_name: { required: false, conditional: true, label: 'Lessor Name', min: 3, max: 150 },
+37:  monthly_rental: { required: false, conditional: true, label: 'Monthly Rental', numeric: true },
+38:  area: { required: true, label: 'Area', numeric: true },
+39:  no_of_male_employees: { required: true, label: 'Male Employees', numeric: true },
+40:  no_of_female_employees: { required: true, label: 'Female Employees', numeric: true },
+41:  no_of_employees_residing_within_the_area: { required: true, label: 'Residing Employees', numeric: true },
+42:  no_of_van: { required: true, label: 'Vans', numeric: true },
+43:  no_of_truck: { required: true, label: 'Trucks', numeric: true },
+44:  no_of_motorcycle: { required: true, label: 'Motorcycles', numeric: true },
+45:  activity_type: { required: true, label: 'Activity Type', min: 3, max: 100 }
+46:},
+47:    HINTS: {
+48:  bin: { rule: 'BIN Format: PSGC7-YEAR4-INC7', fix: 'Use format: 7-digit PSGC code + dash + 4-digit year + dash + 7-digit increment. Example: 1400101-2024-0000001' },
+49:  business_name: { rule: 'Required, 3-100 characters', fix: 'Enter the full registered business name. Must be at least 3 characters, max 100.' },
+50:  trade_name: { rule: 'Optional, 3-100 characters if provided', fix: 'Leave blank or enter a trade/brand name between 3-100 characters.' },
+51:  business_type: { rule: 'Must be one of 5 allowed types', fix: 'Use exactly: SOLE PROPRIETORSHIP, ONE PERSON CORPORATION, PARTNERSHIP, CORPORATION, or COOPERATIVE' },
+52:  dti_no: { rule: 'Required if SOLE PROPRIETORSHIP', fix: 'Enter DTI registration number (3-30 chars). Required when Business Type is SOLE PROPRIETORSHIP.' },
+53:  dti_registratrion_expiry_date: { rule: 'Required if SOLE PROPRIETORSHIP, format MM/DD/YYYY', fix: 'Enter date as MM/DD/YYYY. Example: 12/31/2025. Required when Business Type is SOLE PROPRIETORSHIP.' },
+54:  sec_no: { rule: 'Required for OPC/PARTNERSHIP/CORPORATION', fix: 'Enter SEC registration number (3-30 chars). Required when Business Type is ONE PERSON CORPORATION, PARTNERSHIP, or CORPORATION.' },
+55:  cda_no: { rule: 'Required if COOPERATIVE', fix: 'Enter CDA registration number (3-30 chars). Required when Business Type is COOPERATIVE.' },
+56:  tin_no: { rule: 'Optional, numbers and dashes only', fix: 'Enter TIN using digits and dashes only. Example: 123-456-789' },
+57:  email_address: { rule: 'Required, valid email format', fix: 'Enter a valid email address. Example: business@email.com. Spaces are not allowed.' },
+58:  cellphone_no: { rule: 'Required, 12 digits starting with 639', fix: 'Enter as 639xxxxxxxxx (12 digits). The system auto-converts 09xx and 9xx formats.' },
+59:  telephone_no: { rule: 'Optional, 3-20 characters', fix: 'Leave blank or enter landline number between 3-20 characters.' },
+60:  incharge_first_name: { rule: 'Required, min 3 characters', fix: 'Enter the first name of the person in charge (at least 3 characters).' },
+61:  incharge_middle_name: { rule: 'Optional, min 3 characters if provided', fix: 'Leave blank or enter middle name (at least 3 characters).' },
+62:  incharge_last_name: { rule: 'Required, min 3 characters', fix: 'Enter the last name/surname of the person in charge (at least 3 characters).' },
+63:  incharge_extension_name: { rule: 'Optional, min 3 characters if provided', fix: 'Leave blank or enter extension like JR, SR, III. Periods are auto-removed.' },
+64:  incharge_sex: { rule: 'Required, must be M or F', fix: 'Enter M for Male or F for Female. The system auto-converts MALE/FEMALE.' },
+65:  incharge_country_of_citizenship: { rule: 'Required, min 3 characters', fix: 'Enter country of citizenship. Example: Filipino, American, Chinese' },
+66:  incharge_street: { rule: 'Optional, min 3 characters if provided', fix: 'Leave blank or enter street address (at least 3 characters).' },
+67:  incharge_barangay: { rule: 'Required, min 3 characters', fix: 'Enter the barangay of the person in charge (at least 3 characters).' },
+68:  incharge_municipality: { rule: 'Required, min 3 characters', fix: 'Enter the municipality/city of the person in charge (at least 3 characters).' },
+69:  incharge_province: { rule: 'Required, min 3 characters', fix: 'Enter the province of the person in charge (at least 3 characters).' },
+70:  office_street: { rule: 'Optional, min 3 characters if provided', fix: 'Leave blank or enter office street address (at least 3 characters).' },
+71:  office_barangay_code: { rule: 'Required', fix: 'Enter the PSGC barangay code for the business office location.' },
+72:  location_owned: { rule: 'Required, must be 1 (owned) or 0 (rented)', fix: 'Enter 1 if the business location is owned, or 0 if rented. Auto-converts: yes/true/owned → 1, no/false/rented → 0.' },
+73:  tdn_no: { rule: 'Required for owned (location_owned=1), 3-20 chars', fix: 'Enter Tax Declaration Number. Required when location is owned, unless PIN is provided.' },
+74:  pin_no: { rule: 'Required for owned (location_owned=1), 3-20 chars', fix: 'Enter Property Identification Number. Required when location is owned, unless TDN is provided.' },
+75:  lessor_name: { rule: 'Required for rented (location_owned=0), 3-150 chars', fix: 'Enter the name of the lessor/property owner. Required when location is rented.' },
+76:  monthly_rental: { rule: 'Required for rented (location_owned=0), non-negative number', fix: 'Enter the monthly rental amount as a whole number. Required when location is rented.' },
+77:  area: { rule: 'Required, non-negative number', fix: 'Enter the business area in square meters as a whole number.' },
+78:  no_of_male_employees: { rule: 'Required, non-negative number', fix: 'Enter the count of male employees (whole number, 0 or more).' },
+79:  no_of_female_employees: { rule: 'Required, non-negative number', fix: 'Enter the count of female employees (whole number, 0 or more).' },
+80:  no_of_employees_residing_within_the_area: { rule: 'Required, cannot exceed total employees', fix: 'Enter count of employees residing in the business area. Must not exceed Male + Female employees combined.' },
+81:  no_of_van: { rule: 'Required, non-negative number', fix: 'Enter the number of vans owned/used by the business (whole number, 0 or more).' },
+82:  no_of_truck: { rule: 'Required, non-negative number', fix: 'Enter the number of trucks owned/used by the business (whole number, 0 or more).' },
+83:  no_of_motorcycle: { rule: 'Required, non-negative number', fix: 'Enter the number of motorcycles owned/used by the business (whole number, 0 or more).' },
+84:  activity_type: { rule: 'Required, min 3 characters', fix: 'Enter the type of business activity. Example: Retail, Wholesale, Manufacturing, Food Service' }
+85:},
+86:    FIELD_ORDER: [
+87:  'bin','business_name','trade_name','business_type',
+88:  'dti_no','dti_registratrion_expiry_date','sec_no','cda_no','tin_no',
+89:  'email_address','cellphone_no','telephone_no',
+90:  'incharge_first_name','incharge_middle_name','incharge_last_name','incharge_extension_name',
+91:  'incharge_sex','incharge_country_of_citizenship','incharge_street',
+92:  'incharge_barangay','incharge_municipality','incharge_province',
+93:  'office_street','office_barangay_code','location_owned',
+94:  'tdn_no','pin_no','lessor_name','monthly_rental',
+95:  'area','no_of_male_employees','no_of_female_employees',
+96:  'no_of_employees_residing_within_the_area',
+97:  'no_of_van','no_of_truck','no_of_motorcycle','activity_type'
+98:],
+99:    DATE_FIELDS: ['dti_registratrion_expiry_date']
+100:  },
+101:  table2: {
+102:    RULES: {
+103:  bin: { required: true, label: 'BIN' },
+104:  business_line_code: { required: true, label: 'Business Line Code', numeric: true },
+105:  capital_amount: { required: true, label: 'Capital Amount', numeric: true },
+106:  gross_amount: { required: true, label: 'Gross Amount', numeric: true },
+107:  gross_amount_essential: { required: true, label: 'Gross Essential', numeric: true },
+108:  gross_amount_nonessential: { required: true, label: 'Gross Non-Essential', numeric: true },
+109:  retired_date: { required: false, label: 'Retired Date' }
+110:},
+111:    HINTS: {
+112:  bin: { rule: 'BIN Format: PSGC7-YEAR4-INC7', fix: 'Use format: 7-digit PSGC code + dash + 4-digit year + dash + 7-digit increment. Example: 1400101-2024-0000001' },
+113:  business_line_code: { rule: 'Required, numeric', fix: 'Enter a numeric business line code. Must exist in system.' },
+114:  capital_amount: { rule: 'Required, number', fix: 'Enter capital amount as a number. Use 0 if not applicable.' },
+115:  gross_amount: { rule: 'Required, number', fix: 'Enter gross amount as a number. Must not be blank.' },
+116:  gross_amount_essential: { rule: 'Required, number', fix: 'Enter essential gross amount as a number. Must not be blank.' },
+117:  gross_amount_nonessential: { rule: 'Required, number', fix: 'Enter nonessential gross amount as a number. Must not be blank.' },
+118:  retired_date: { rule: 'Optional, MM/DD/YYYY', fix: 'Enter date as MM/DD/YYYY. Example: 12/31/2025. Leave blank if not applicable.' }
+119:},
+120:    FIELD_ORDER: ['bin','business_line_code','capital_amount','gross_amount','gross_amount_essential','gross_amount_nonessential','retired_date'],
+121:    DATE_FIELDS: ['retired_date']
+122:  },
+123:  table3: {
+124:    RULES: {
+125:  business_bin: { required: true, label: 'Business BIN' },
+126:  application_type: { required: true, label: 'App. Type', allowed: ['N','R','Q'] },
+127:  application_date: { required: true, label: 'App. Date' },
+128:  year: { required: true, label: 'Year' },
+129:  qtr_from: { required: false, label: 'Qtr From', allowed: ['1','2','3','4'] },
+130:  qtr_to: { required: false, label: 'Qtr To', allowed: ['1','2','3','4'] },
+131:  amount: { required: true, label: 'Amount', numeric: true },
+132:  discount: { required: true, label: 'Discount', numeric: true },
+133:  surcharge: { required: true, label: 'Surcharge', numeric: true },
+134:  interest: { required: true, label: 'Interest', numeric: true },
+135:  total: { required: true, label: 'Total', numeric: true },
+136:  issued_date: { required: true, label: 'Issued Date' },
+137:  valid_until: { required: true, label: 'Valid Until' },
+138:  or_no: { required: true, label: 'OR No.' },
+139:  or_date: { required: true, label: 'OR Date' },
+140:  permit_no: { required: false, label: 'Permit No.' },
+141:  barangay_clearance_number: { required: false, label: 'Brgy Clearance No.' },
+142:  business_plate_number: { required: false, label: 'Plate No.' },
+143:  mode_of_payment: { required: true, label: 'Payment Mode', allowed: ['ONLINE','MANUAL'] }
+144:},
+145:    HINTS: {
+146:  business_bin: { rule: 'BIN Format: PSGC7-YEAR4-INC7', fix: 'Use format: 7-digit PSGC code + dash + 4-digit year + dash + 7-digit increment. Example: 1400101-2024-0000001' },
+147:  application_type: { rule: 'Must be N, R, or Q', fix: 'Enter N for NEW, R for RENEWAL, or Q for QUARTERLY. Spaces are auto-stripped, case auto-uppercased.' },
+148:  application_date: { rule: 'Required, format MM/DD/YYYY', fix: 'Enter date as MM/DD/YYYY. Example: 01/20/2024. Various date formats are auto-converted.' },
+149:  year: { rule: 'Required, 4-digit year (1900-2100)', fix: 'Enter a 4-digit year. Example: 2024. Must be between 1900 and 2100.' },
+150:  qtr_from: { rule: 'Optional, must be 1, 2, 3, or 4', fix: 'Enter a quarter number (1-4). Leave blank if not applicable.' },
+151:  qtr_to: { rule: 'Optional, must be 1-4 and >= Qtr From', fix: 'Enter a quarter number (1-4). Must be greater than or equal to Qtr From if both are provided.' },
+152:  amount: { rule: 'Required, non-negative number (decimals allowed)', fix: 'Enter the base amount as a number. Non-numeric characters are auto-stripped.' },
+153:  discount: { rule: 'Required, non-negative number (decimals allowed)', fix: 'Enter the discount amount as a number. Non-numeric characters are auto-stripped.' },
+154:  surcharge: { rule: 'Required, non-negative number (decimals allowed)', fix: 'Enter the surcharge amount as a number. Non-numeric characters are auto-stripped.' },
+155:  interest: { rule: 'Required, non-negative number (decimals allowed)', fix: 'Enter the interest amount as a number. Non-numeric characters are auto-stripped.' },
+156:  total: { rule: 'Required, must equal Amount + Surcharge + Interest - Discount', fix: 'Must equal amount + surcharge + interest - discount. Auto-corrected if blank or wrong when other numeric fields are valid.' },
+157:  issued_date: { rule: 'Required, format MM/DD/YYYY', fix: 'Enter the issue date as MM/DD/YYYY. Example: 01/20/2024.' },
+158:  valid_until: { rule: 'Required, format MM/DD/YYYY, must be >= Issued Date', fix: 'Enter the expiration date as MM/DD/YYYY. Must be on or after the Issued Date.' },
+159:  or_no: { rule: 'Required, alphanumeric, must be unique', fix: 'Enter a unique Official Receipt number (alphanumeric). Example: U12345678. Duplicates are flagged.' },
+160:  or_date: { rule: 'Required, format MM/DD/YYYY', fix: 'Enter the OR date as MM/DD/YYYY. Example: 01/20/2024.' },
+161:  permit_no: { rule: 'Optional, alphanumeric if provided', fix: 'Leave blank or enter the permit number (alphanumeric). Example: A-0001.' },
+162:  barangay_clearance_number: { rule: 'Optional, alphanumeric if provided', fix: 'Leave blank or enter the barangay clearance number (alphanumeric). Example: ABC-123.' },
+163:  business_plate_number: { rule: 'Optional, alphanumeric if provided', fix: 'Leave blank or enter the business plate number (alphanumeric). Example: AA-0001.' },
+164:  mode_of_payment: { rule: 'Must be ONLINE or MANUAL', fix: 'Enter ONLINE or MANUAL. Case auto-uppercased. Example: ONLINE.' }
+165:},
+166:    FIELD_ORDER: [
+167:  'business_bin','application_type','application_date','year','qtr_from','qtr_to',
+168:  'amount','discount','surcharge','interest','total',
+169:  'issued_date','valid_until','or_no','or_date',
+170:  'permit_no','barangay_clearance_number','business_plate_number','mode_of_payment'
+171:],
+172:    DATE_FIELDS: ['application_date','issued_date','valid_until','or_date']
+173:  },
+174:  table4: {
+175:    RULES: {
+176:  business_bin: { required: true, label: 'Business BIN' },
+177:  application_or_no: { required: true, label: 'OR No.' },
+178:  code: { required: true, label: 'Fee Code', min: 2, max: 20 },
+179:  description: { required: true, label: 'Description', min: 2, max: 100 },
+180:  amount: { required: true, label: 'Amount', numeric: true },
+181:  discount: { required: true, label: 'Discount', numeric: true },
+182:  Interest: { required: true, label: 'Interest', numeric: true },
+183:  Surcharge: { required: true, label: 'Surcharge', numeric: true },
+184:  total: { required: true, label: 'Total', numeric: true },
+185:  type: { required: true, label: 'Fee Type', allowed: ['LICENSE','PERMIT','SANITARY','GARBAGE','FIXED','OTHER'] },
+186:  qtr_from: { required: true, label: 'Qtr From', allowed: ['1','2','3','4'] },
+187:  qtr_to: { required: true, label: 'Qtr To', allowed: ['1','2','3','4'] },
+188:  year: { required: true, label: 'Year' }
+189:},
+190:    HINTS: {
+191:  business_bin: { rule: 'BIN Format: PSGC7-YEAR4-INC7', fix: 'Use format: 7-digit PSGC code + dash + 4-digit year + dash + 7-digit increment. Example: 0300801-2024-0000001' },
+192:  application_or_no: { rule: 'Required, non-empty alphanumeric', fix: 'Enter the application OR number. Must be a non-empty alphanumeric string. Example: U12345678' },
+193:  code: { rule: 'Required, 2-20 alphanumeric characters', fix: 'Enter the fee code (2-20 chars). Spaces will be auto-stripped. Example: GF-01' },
+194:  description: { rule: 'Required, 2-100 characters', fix: 'Enter a fee description between 2 and 100 characters. Example: Garbage Fee' },
+195:  amount: { rule: 'Required, non-negative number', fix: 'Enter the fee amount as a number >= 0. Non-numeric characters will be stripped.' },
+196:  discount: { rule: 'Required, non-negative number', fix: 'Enter the discount as a number >= 0. Default is 0 if none.' },
+197:  Interest: { rule: 'Required, non-negative number', fix: 'Enter the interest as a number >= 0. Default is 0 if none.' },
+198:  Surcharge: { rule: 'Required, non-negative number', fix: 'Enter the surcharge as a number >= 0. Default is 0 if none.' },
+199:  total: { rule: 'Required, must equal Amount + Surcharge + Interest - Discount', fix: 'Total is auto-calculated. If blank or wrong, auto-correct will fix it. Formula: amount + Surcharge + Interest - discount.' },
+200:  type: { rule: 'Must be one of: LICENSE, PERMIT, SANITARY, GARBAGE, FIXED, OTHER', fix: 'Enter the fee type. Will be auto-uppercased. Allowed: LICENSE, PERMIT, SANITARY, GARBAGE, FIXED, OTHER.' },
+201:  qtr_from: { rule: 'Required, must be 1, 2, 3, or 4', fix: 'Enter the starting quarter (1, 2, 3, or 4).' },
+202:  qtr_to: { rule: 'Required, must be 1-4 and >= Qtr From', fix: 'Enter the ending quarter (1, 2, 3, or 4). Must be greater than or equal to Qtr From.' },
+203:  year: { rule: 'Required, 4-digit year (1900-2100)', fix: 'Enter a 4-digit year between 1900 and 2100. Example: 2024' }
+204:},
+205:    FIELD_ORDER: ['business_bin','application_or_no','code','description','amount','discount','Interest','Surcharge','total','type','qtr_from','qtr_to','year'],
+206:    DATE_FIELDS: []
+207:  }
+208:};
+209:
+210:// --- STATE MANAGEMENT ---
+211:let MasterStore = { validBINs: new Set() };
+212:let auditLog = []; // { table, row, type, message }
+213:
+214:let appState = {
+215:    table1: { loaded: false, headers: [], rows: [], cellErrors: {}, autocorrectedCells: {}, hasValidated: false },
+216:    table2: { loaded: false, headers: [], rows: [], cellErrors: {}, autocorrectedCells: {}, hasValidated: false },
+217:    table3: { loaded: false, headers: [], rows: [], cellErrors: {}, autocorrectedCells: {}, hasValidated: false },
+218:    table4: { loaded: false, headers: [], rows: [], cellErrors: {}, autocorrectedCells: {}, hasValidated: false }
+219:};
+220:
+221:let activeTableId = 'table1';
+222:let currentPage = 1;
+223:const rowsPerPage = 100;
+224:let pendingDuplicates = []; // Array of { table, key, rowIndices }
+225:
+226:// Dark mode logic
+227:let isDark = false;
+228:document.getElementById('themeBtn').addEventListener('click', () => {
+229:    isDark = !isDark;
+230:    document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+231:    document.getElementById('themeBtn').innerText = isDark ? '☀️ Light Mode' : '🌙 Dark Mode';
+232:});
+233:
+234:// File input logic (Batch)
+235:document.getElementById('csvFile').addEventListener('change', (e) => {
+236:    const files = e.target.files;
+237:    if (!files.length) return;
+238:    
+239:    let filesProcessed = 0;
+240:    
+241:    Array.from(files).forEach(file => {
+242:        Papa.parse(file, {
+243:            header: true,
+244:            skipEmptyLines: true,
+245:            complete: (results) => {
+246:                let headers = results.meta.fields || [];
+247:                let detectedId = detectTableType(headers);
+248:                
+249:                appState[detectedId] = {
+250:                    loaded: true,
+251:                    headers: headers,
+252:                    rows: results.data,
+253:                    cellErrors: {},
+254:                    autocorrectedCells: {},
+255:                    hasValidated: false
+256:                };
+257:                
+258:                let tab = document.querySelector(`.tab[data-target="${detectedId}"]`);
+259:                tab.classList.remove('disabled');
+260:                
+261:                auditLog.push({table: detectedId, row: 'System', type: 'INFO', message: `Loaded ${results.data.length} rows.`});
+262:                
+263:                filesProcessed++;
+264:                if (filesProcessed === files.length) {
+265:                    // All files loaded. Auto-switch to table1 if loaded, or the first loaded.
+266:                    if (appState['table1'].loaded) switchTab('table1');
+267:                    else switchTab(detectedId);
+268:                    
+269:                    document.getElementById('validateBtn').disabled = false;
+270:                    document.getElementById('autocorrectBtn').disabled = false;
+271:                }
+272:            }
+273:        });
+274:    });
+275:});
+276:
+277:document.querySelectorAll('.tab').forEach(t => {
+278:    t.addEventListener('click', () => {
+279:        if (!t.classList.contains('disabled')) {
+280:            switchTab(t.dataset.target);
+281:        }
+282:    });
+283:});
+284:
+285:function switchTab(tableId) {
+286:    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+287:    document.querySelector(`.tab[data-target="${tableId}"]`).classList.add('active');
+288:    activeTableId = tableId;
+289:    currentPage = 1;
+290:    
+291:    document.getElementById('tableBadge').textContent = 'Mode: ' + activeTableId.toUpperCase();
+292:    document.getElementById('tableBadge').style.display = 'inline-block';
+293:    
+294:    let st = appState[activeTableId];
+295:    document.getElementById('exportBtn').style.display = st.hasValidated ? 'inline-flex' : 'none';
+296:    document.getElementById('exportAuditBtn').style.display = auditLog.length > 0 ? 'inline-flex' : 'none';
+297:    
+298:    renderTable();
+299:    updateStatusUI();
+300:}
+301:
+302:function detectTableType(csvHeaders) {
+303:  let joined = csvHeaders.join(',').toLowerCase();
+304:  if (joined.includes('dti_no') || joined.includes('business_type')) return 'table1';
+305:  if (joined.includes('business_line_code')) return 'table2';
+306:  if (joined.includes('application_type')) return 'table3';
+307:  if (joined.includes('application_or_no') || joined.includes('fee_code') || joined.includes('type')) return 'table4';
+308:  return 'table1'; 
+309:}
+310:
+311:function escapeHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+312:
+313:function renderTable() {
+314:    const c = document.getElementById('tableContainer');
+315:    let st = appState[activeTableId];
+316:    if (!st || !st.loaded) {
+317:        c.innerHTML = '';
+318:        document.getElementById('paginationBar').style.display = 'none';
+319:        return;
+320:    }
+321:
+322:    let schema = schemas[activeTableId];
+323:    let displayHeaders = st.headers.length ? st.headers : schema.FIELD_ORDER;
+324:    let orderedHeaders = [];
+325:    schema.FIELD_ORDER.forEach(f => { if (displayHeaders.includes(f)) orderedHeaders.push(f); });
+326:    displayHeaders.forEach(f => { if (!orderedHeaders.includes(f)) orderedHeaders.push(f); });
+327:
+328:    let totalRows = st.rows.length;
+329:    let totalPages = Math.ceil(totalRows / rowsPerPage);
+330:    if(currentPage > totalPages) currentPage = totalPages || 1;
+331:    
+332:    let startIdx = (currentPage - 1) * rowsPerPage;
+333:    let endIdx = Math.min(startIdx + rowsPerPage, totalRows);
+334:    
+335:    let html = '<div class="table-wrap"><table><thead><tr><th class="row-num">#</th>';
+336:    orderedHeaders.forEach(h => {
+337:        let rule = schema.RULES[h];
+338:        let badge = rule && rule.required ? '<span style="color:#ef4444">*</span>' : (!rule ? '' : '<span style="color:#94a3b8;font-size:10px">opt</span>');
+339:        html += '<th>' + (rule?.label || h) + ' ' + badge + '</th>';
+340:    });
+341:    html += '</tr></thead><tbody>';
+342:
+343:    for (let rIdx = startIdx; rIdx < endIdx; rIdx++) {
+344:        let row = st.rows[rIdx];
+345:        let hasErr = st.cellErrors[rIdx] && Object.keys(st.cellErrors[rIdx]).length > 0;
+346:        html += '<tr class="' + (hasErr ? 'has-error' : '') + '"><td class="row-num">' + (rIdx+1) + '</td>';
+347:        orderedHeaders.forEach(key => {
+348:            let err = st.cellErrors[rIdx]?.[key];
+349:            let isAuto = st.autocorrectedCells[rIdx] && st.autocorrectedCells[rIdx].has(key);
+350:            let cls = 'cell-input';
+351:            if (err) cls += ' cell-err';
+352:            else if (isAuto && st.hasValidated) cls += ' cell-autocorrected';
+353:            else if (st.hasValidated) cls += ' cell-ok';
+354:            let displayVal = row[key] || '';
+355:            
+356:            html += `<td><input type="text" class="${cls}" data-row="${rIdx}" data-col="${key}" value="${escapeHtml(displayVal)}"></td>`;
+357:        });
+358:        html += '</tr>';
+359:    }
+360:    html += '</tbody></table></div>';
+361:    c.innerHTML = html;
+362:    
+363:    // Pagination UI
+364:    let pBar = document.getElementById('paginationBar');
+365:    if (totalRows > rowsPerPage) {
+366:        pBar.style.display = 'flex';
+367:        document.getElementById('pageInfo').innerText = `Page ${currentPage} of ${totalPages} (${startIdx+1}-${endIdx} of ${totalRows})`;
+368:        document.getElementById('prevPage').disabled = currentPage === 1;
+369:        document.getElementById('nextPage').disabled = currentPage === totalPages;
+370:    } else {
+371:        pBar.style.display = 'none';
+372:    }
+373:
+374:    c.querySelectorAll('.cell-input').forEach(input => {
+375:        input.addEventListener('input', e => {
+376:            let r = parseInt(e.target.dataset.row), k = e.target.dataset.col;
+377:            st.rows[r][k] = e.target.value;
+378:            if (st.hasValidated) runLiveValidation(r, k, e.target);
+379:        });
+380:        input.addEventListener('change', e => {
+381:            if (st.hasValidated) runLiveValidation(parseInt(e.target.dataset.row), e.target.dataset.col, e.target);
+382:        });
+383:        input.addEventListener('mouseenter', e => showTooltip(e.target));
+384:        input.addEventListener('mouseleave', hideTooltip);
+385:    });
+386:}
+387:
+388:document.getElementById('prevPage').addEventListener('click', () => { if(currentPage > 1) { currentPage--; renderTable(); }});
+389:document.getElementById('nextPage').addEventListener('click', () => { 
+390:    let max = Math.ceil(appState[activeTableId].rows.length / rowsPerPage);
+391:    if(currentPage < max) { currentPage++; renderTable(); }
+392:});
+393:
+394:const tipEl = document.getElementById('customTooltip');
+395:function showTooltip(input) {
+396:  let r = input.dataset.row;
+397:  let k = input.dataset.col;
+398:  let st = appState[activeTableId];
+399:  let err = st.cellErrors[r]?.[k];
+400:  if (!err) return;
+401:  
+402:  let hint = schemas[activeTableId].HINTS[k];
+403:  let html = `<div class="err">⚠️ ${escapeHtml(err)}</div>`;
+404:  if (hint) {
+405:    if(hint.rule) html += `<div class="rule">${escapeHtml(hint.rule)}</div>`;
+406:    if(hint.fix) html += `<div class="hint">Fix: ${escapeHtml(hint.fix)}</div>`;
+407:  }
+408:  tipEl.innerHTML = html;
+409:  tipEl.style.display = 'block';
+410:  let rect = input.getBoundingClientRect();
+411:  tipEl.style.left = Math.min(rect.left, window.innerWidth - 300) + 'px';
+412:  tipEl.style.top = (rect.bottom + 5) + 'px';
+413:}
+414:function hideTooltip() { tipEl.style.display = 'none'; }
+415:
+416:
+417:function formatDate(raw) {
+418:  if (!raw || !raw.trim()) return '';
+419:  let s = raw.trim().replace(/^'+/, '');
+420:  let formatted = '';
+421:  if (/^d{2}/d{2}/d{4}$/.test(s)) {
+422:      formatted = s;
+423:  } else {
+424:      let d = new Date(s);
+425:      if (isNaN(d.getTime())) return raw;
+426:      formatted = String(d.getMonth()+1).padStart(2,'0') + '/' + String(d.getDate()).padStart(2,'0') + '/' + d.getFullYear();
+427:  }
+428:  if (formatted.startsWith('0')) return "'" + formatted;
+429:  return formatted;
+430:}
+431:
+432:function customValidateRow(tableId, row, errs, seenLists) {
+433:    const g = (k) => (row[k] == null ? '' : String(row[k])).trim();
+434:    
+435:    if (tableId === 'table1') {
+436:        let bin = g('bin');
+437:        if (bin && !/^\d{7}-\d{4}-\d{7}$/.test(bin)) errs.bin = 'Format: PSGC7-YEAR4-INC7';
+438:        
+439:        let bt = g('business_type');
+440:        if (bt === 'SOLE PROPRIETORSHIP') {
+441:            if (!g('dti_no')) errs.dti_no = 'Required for SOLE PROPRIETORSHIP';
+442:            if (!g('dti_registratrion_expiry_date')) errs.dti_registratrion_expiry_date = 'Required for SOLE PROPRIETORSHIP';
+443:        }
+444:        if (['ONE PERSON CORPORATION','PARTNERSHIP','CORPORATION'].includes(bt) && !g('sec_no')) errs.sec_no = 'Required for ' + bt;
+445:        if (bt === 'COOPERATIVE' && !g('cda_no')) errs.cda_no = 'Required for COOPERATIVE';
+446:        
+447:        let locOwned = g('location_owned');
+448:        if (locOwned === '1') {
+449:            if (!g('tdn_no') && !g('pin_no')) {
+450:                errs.tdn_no = 'Provide TDN or PIN for owned';
+451:                errs.pin_no = 'Provide TDN or PIN for owned';
+452:            }
+453:        }
+454:        if (locOwned === '0') {
+455:            if (!g('lessor_name')) errs.lessor_name = 'Required for rented';
+456:            if (!g('monthly_rental')) errs.monthly_rental = 'Required for rented';
+457:        }
+458:        
+459:        let male = Number(g('no_of_male_employees') || 0);
+460:        let female = Number(g('no_of_female_employees') || 0);
+461:        let residing = Number(g('no_of_employees_residing_within_the_area') || 0);
+462:        if (residing > male + female) errs.no_of_employees_residing_within_the_area = 'Cannot exceed total (' + (male+female) + ')';
+463:    } 
+464:    else if (tableId === 'table2' || tableId === 'table3' || tableId === 'table4') {
+465:        let binKey = tableId === 'table2' ? 'bin' : 'business_bin';
+466:        let bin = g(binKey);
+467:        if (bin && !/^\d{7}-\d{4}-\d{7}$/.test(bin)) errs[binKey] = 'Format: PSGC7-YEAR4-INC7';
+468:        
+469:        // CROSS-TABLE REFERENTIAL INTEGRITY
+470:        if (appState['table1'].loaded && appState['table1'].hasValidated) {
+471:            if (bin && !MasterStore.validBINs.has(bin)) {
+472:                errs[binKey] = 'BIN not found in Table 1 MasterStore';
+473:            }
+474:        }
+475:    }
+476:    
+477:    if (tableId === 'table3') {
+478:        let qf = g('qtr_from'), qt = g('qtr_to');
+479:        if (qf && qt && Number(qt) < Number(qf)) errs.qtr_to = 'Must be >= Qtr From';
+480:        
+481:        let amtN = Number((g('amount')||'0').replace(/[^\d.\-]/g,''));
+482:        let surN = Number((g('surcharge')||'0').replace(/[^\d.\-]/g,''));
+483:        let intN = Number((g('interest')||'0').replace(/[^\d.\-]/g,''));
+484:        let dscN = Number((g('discount')||'0').replace(/[^\d.\-]/g,''));
+485:        let expected = amtN + surN + intN - dscN;
+486:        let totalVal = g('total');
+487:        if (totalVal !== '' && !isNaN(Number(totalVal.replace(/[^\d.\-]/g,'')))) {
+488:            if (Math.abs(Number(totalVal.replace(/[^\d.\-]/g,'')) - expected) > 0.01) {
+489:                errs.total = 'Must equal amount + surcharge + interest - discount (' + expected + ')';
+490:            }
+491:        }
+492:    }
+493:    else if (tableId === 'table4') {
+494:        let amtN = Number((g('amount')||'0').replace(/[^\d.\-]/g,''));
+495:        let surN = Number((g('Surcharge')||'0').replace(/[^\d.\-]/g,''));
+496:        let intN = Number((g('Interest')||'0').replace(/[^\d.\-]/g,''));
+497:        let dscN = Number((g('discount')||'0').replace(/[^\d.\-]/g,''));
+498:        let expected = amtN + surN + intN - dscN;
+499:        let totalVal = g('total');
+500:        if (totalVal !== '' && !isNaN(Number(totalVal.replace(/[^\d.\-]/g,'')))) {
+501:            let expectedRounded = Math.round(expected * 100) / 100;
+502:            if (Math.abs(Number(totalVal.replace(/[^\d.\-]/g,'')) - expectedRounded) > 0.001) {
+503:                errs.total = 'Must equal amount + Surcharge + Interest - discount (' + expectedRounded + ')';
+504:            }
+505:        }
+506:        let qf = g('qtr_from'), qt = g('qtr_to');
+507:        if (qf && qt && Number(qt) < Number(qf)) errs.qtr_to = 'Must be >= Qtr From';
+508:    }
+509:}
+510:
+511:function validateSingleRow(tableId, row, rowIdx, seenLists) {
+512:  let errs = {};
+513:  let schema = schemas[tableId].RULES;
+514:  
+515:  Object.keys(schema).forEach(k => {
+516:    let rule = schema[k];
+517:    let val = (row[k] == null ? '' : String(row[k])).trim();
+518:    
+519:    if (rule.required && val === '') { errs[k] = 'Required'; return; }
+520:    if (val !== '') {
+521:      if (rule.min && val.length < rule.min) errs[k] = `Min ${rule.min} chars`;
+522:      if (rule.max && val.length > rule.max) errs[k] = `Max ${rule.max} chars`;
+523:      if (rule.allowed && !rule.allowed.includes(val)) errs[k] = `Allowed: ${rule.allowed.join(', ')}`;
+524:      if (rule.numeric) {
+525:        if (!/^\d+(\.\d+)?$/.test(val)) {
+526:            errs[k] = 'Must be numbers only';
+527:        }
+528:      }
+529:      let df = schemas[tableId].DATE_FIELDS || [];
+530:      if (df.includes(k)) {
+531:        let cleanVal = val.replace(/^'+/, '');
+532:        if (!/^\d{2}\/\d{2}\/\d{4}$/.test(cleanVal)) {
+533:            errs[k] = "Invalid format. Use MM/DD/YYYY";
+534:        } else {
+535:            let d = new Date(cleanVal);
+536:            if (isNaN(d.getTime())) {
+537:                errs[k] = 'Invalid Date';
+538:            } else {
+539:                let y = d.getFullYear();
+540:                if (y < 1900 || y > 2100) errs[k] = 'Year out of range (1900-2100)';
+541:            }
+542:        }
+543:      }
+544:    }
+545:  });
+546:
+547:  customValidateRow(tableId, row, errs, seenLists);
+548:  return errs;
+549:}
+550:
+551:// Deduplication grouping
+552:function detectDuplicates(tableId, rows) {
+553:    let dups = [];
+554:    if (tableId === 'table1') {
+555:        let map = {};
+556:        rows.forEach((r, idx) => { let b = r.bin?.trim(); if(b) { map[b] = map[b] || []; map[b].push(idx); } });
+557:        for (let b in map) if(map[b].length > 1) dups.push({table: tableId, keyField: 'bin', keyValue: b, indices: map[b]});
+558:    }
+559:    if (tableId === 'table3') {
+560:        let map = {};
+561:        rows.forEach((r, idx) => { let o = r.or_no?.trim(); if(o) { map[o] = map[o] || []; map[o].push(idx); } });
+562:        for (let o in map) if(map[o].length > 1) dups.push({table: tableId, keyField: 'or_no', keyValue: o, indices: map[o]});
+563:    }
+564:    return dups;
+565:}
+566:
+567:function runLiveValidation(changedRow, changedKey, inputEl) {
+568:  let st = appState[activeTableId];
+569:  let seenLists = {};
+570:  
+571:  let errs = validateSingleRow(activeTableId, st.rows[changedRow], changedRow, seenLists);
+572:  if (Object.keys(errs).length > 0) {
+573:      st.cellErrors[changedRow] = errs;
+574:      auditLog.push({table: activeTableId, row: changedRow+1, type: 'ERROR', message: `${changedKey}: ${errs[changedKey]}`});
+575:  } else { 
+576:      delete st.cellErrors[changedRow]; 
+577:  }
+578:  
+579:  updateStatusUI();
+580:  
+581:  let tr = inputEl.closest('tr');
+582:  let hasRowErr = st.cellErrors[changedRow] !== undefined;
+583:  tr.className = hasRowErr ? 'has-error' : '';
+584:  
+585:  tr.querySelectorAll('.cell-input').forEach(inp => {
+586:    let k = inp.dataset.col;
+587:    let err = st.cellErrors[changedRow]?.[k];
+588:    let isAuto = st.autocorrectedCells[changedRow] && st.autocorrectedCells[changedRow].has(k);
+589:    inp.className = 'cell-input' + (err ? ' cell-err' : (isAuto ? ' cell-autocorrected' : ' cell-ok'));
+590:  });
+591:}
+592:
+593:function processDuplicatesModal() {
+594:    if (pendingDuplicates.length === 0) return;
+595:    let dup = pendingDuplicates.shift();
+596:    let st = appState[dup.table];
+597:    
+598:    document.getElementById('dupModal').style.display = 'flex';
+599:    let container = document.getElementById('dupCards');
+600:    container.innerHTML = '';
+601:    
+602:    dup.indices.forEach(rowIdx => {
+603:        let row = st.rows[rowIdx];
+604:        let card = document.createElement('div');
+605:        card.className = 'dup-card';
+606:        let html = `<div style="font-weight:bold; margin-bottom:10px;">Row ${rowIdx+1} (${dup.keyField}: ${dup.keyValue})</div>`;
+607:        
+608:        let schema = schemas[dup.table];
+609:        schema.FIELD_ORDER.slice(0, 8).forEach(f => {
+610:            if (row[f]) html += `<div class="dup-field"><strong>${f}</strong><span>${escapeHtml(row[f])}</span></div>`;
+611:        });
+612:        
+613:        html += `<button class="btn btn-primary" style="margin-top:15px;width:100%;justify-content:center;">Keep This Row</button>`;
+614:        card.innerHTML = html;
+615:        
+616:        card.querySelector('button').addEventListener('click', () => {
+617:            // Delete the other rows
+618:            dup.indices.forEach(idx => {
+619:                if (idx !== rowIdx) {
+620:                    st.rows[idx] = null; // Mark for deletion
+621:                    auditLog.push({table: dup.table, row: idx+1, type: 'DEDUPLICATION', message: `Discarded duplicate ${dup.keyField} ${dup.keyValue}`});
+622:                } else {
+623:                    auditLog.push({table: dup.table, row: idx+1, type: 'DEDUPLICATION', message: `Kept record for ${dup.keyField} ${dup.keyValue}`});
+624:                }
+625:            });
+626:            // Compact rows
+627:            st.rows = st.rows.filter(r => r !== null);
+628:            
+629:            document.getElementById('dupModal').style.display = 'none';
+630:            
+631:            if (pendingDuplicates.length > 0) {
+632:                processDuplicatesModal();
+633:            } else {
+634:                // Done deduplicating this table
+635:                finalizeValidation(dup.table);
+636:            }
+637:        });
+638:        container.appendChild(card);
+639:    });
+640:}
+641:
+642:document.getElementById('skipDup').addEventListener('click', () => {
+643:    document.getElementById('dupModal').style.display = 'none';
+644:    let dup = pendingDuplicates[0];
+645:    auditLog.push({table: dup.table, row: 'System', type: 'DEDUPLICATION', message: `Skipped manual resolution for ${dup.keyField} ${dup.keyValue}`});
+646:    
+647:    if (pendingDuplicates.length > 0) {
+648:        processDuplicatesModal();
+649:    } else {
+650:        finalizeValidation(activeTableId);
+651:    }
+652:});
+653:document.getElementById('closeDupModal').addEventListener('click', () => {
+654:    document.getElementById('dupModal').style.display = 'none';
+655:    pendingDuplicates = [];
+656:    finalizeValidation(activeTableId);
+657:});
+658:
+659:
+660:document.getElementById('validateBtn').addEventListener('click', () => {
+661:    // Validate all loaded tables
+662:    Object.keys(appState).forEach(tid => {
+663:        if(appState[tid].loaded) executeValidation(tid);
+664:    });
+665:});
+666:
+667:function executeValidation(tableId) {
+668:    let st = appState[tableId];
+669:    st.hasValidated = true;
+670:    st.cellErrors = {};
+671:    let seenLists = {};
+672:    
+673:    let dups = detectDuplicates(tableId, st.rows);
+674:    if (dups.length > 0) {
+675:        pendingDuplicates = pendingDuplicates.concat(dups);
+676:        if (tableId === activeTableId) processDuplicatesModal(); // Start modal chain
+677:        return; // Pause validation until dups resolved
+678:    }
+679:    
+680:    finalizeValidation(tableId);
+681:}
+682:
+683:function finalizeValidation(tableId) {
+684:    let st = appState[tableId];
+685:    let seenLists = {};
+686:    
+687:    // Reset MasterStore for table 1
+688:    if (tableId === 'table1') MasterStore.validBINs.clear();
+689:
+690:    st.rows.forEach((row, idx) => {
+691:        let errs = validateSingleRow(tableId, row, idx, seenLists);
+692:        if (Object.keys(errs).length > 0) {
+693:            st.cellErrors[idx] = errs;
+694:        } else {
+695:            // Valid row logic
+696:            if (tableId === 'table1') {
+697:                let bin = row['bin'];
+698:                if (bin) MasterStore.validBINs.add(bin);
+699:            }
+700:        }
+701:    });
+702:    
+703:    if(tableId === activeTableId) {
+704:        currentPage = 1;
+705:        renderTable();
+706:        updateStatusUI();
+707:        document.getElementById('exportBtn').style.display = 'inline-flex';
+708:        document.getElementById('exportAuditBtn').style.display = auditLog.length > 0 ? 'inline-flex' : 'none';
+709:    }
+710:}
+711:
+712:function updateStatusUI() {
+713:    let st = appState[activeTableId];
+714:    if(!st.loaded) return;
+715:    
+716:    let errCount = Object.keys(st.cellErrors).reduce((acc, idx) => acc + Object.keys(st.cellErrors[idx]).length, 0);
+717:    
+718:    const s = document.getElementById('status');
+719:    const sum = document.getElementById('errorSummary');
+720:    
+721:    if (!st.hasValidated) {
+722:        s.className = 'status-info';
+723:        s.innerHTML = `Table ${activeTableId} loaded (${st.rows.length} rows). Click Validate.`;
+724:        sum.style.display = 'none';
+725:    } else if (errCount === 0) {
+726:        s.className = 'status-ok';
+727:        s.innerHTML = `✅ All ${st.rows.length} rows valid in ${activeTableId}. Ready for export.`;
+728:        sum.style.display = 'none';
+729:    } else {
+730:        s.className = 'status-err';
+731:        s.innerHTML = `❌ Found ${errCount} error(s) across ${Object.keys(st.cellErrors).length} row(s) in ${activeTableId}. Hover over red cells to see fixes.`;
+732:        sum.style.display = 'block';
+733:        
+734:        let html = `<h4><span style="font-size:16px">⚠</span> Error Summary (${errCount})</h4>`;
+735:        let counter = 0;
+736:        Object.entries(st.cellErrors).forEach(([r, errs]) => {
+737:            if (counter > 50) return; // limit summary
+738:            let errStr = Object.entries(errs).map(([k,v]) => `<b>${k}</b>: ${v}`).join(' | ');
+739:            html += `<div class="err-row">Row ${(Number(r)+1)}: ${errStr}</div>`;
+740:            counter++;
+741:        });
+742:        if(Object.keys(st.cellErrors).length > 50) html += `<div class="err-row">...and more. Check Audit Log.</div>`;
+743:        sum.innerHTML = html;
+744:    }
+745:}
+746:
+747:
+748:function customAutoCorrect(tableId, row, fixes) {
+749:    const v = (k) => (row[k] == null ? '' : String(row[k])).trim();
+750:    if (tableId === 'table1') {
+751:        let bin = v('bin');
+752:        if (bin && bin.includes(' ')) { row.bin = bin.replace(/\s+/g, ''); fixes.push('bin: removed spaces'); }
+753:        
+754:        let cell = v('cellphone_no');
+755:        if (cell) {
+756:            let digits = cell.replace(/[^\d]/g, '');
+757:            if (digits.startsWith('09') && digits.length === 11) { row.cellphone_no = '639' + digits.substring(2); fixes.push('cellphone_no: converted 09xx to 639xx'); }
+758:        }
+759:        
+760:        let loc = v('location_owned').toLowerCase();
+761:        if (['yes', 'true', 'owned', '1.0'].includes(loc)) { row.location_owned = '1'; fixes.push('location_owned: converted to 1'); }
+762:        else if (['no', 'false', 'rented', '0.0'].includes(loc)) { row.location_owned = '0'; fixes.push('location_owned: converted to 0'); }
+763:        else if (loc !== '1' && loc !== '0' && loc !== '') { row.location_owned = ''; fixes.push('location_owned: cleared invalid'); }
+764:    }
+765:    if (tableId === 'table3') {
+766:        let amtN = Number(v('amount').replace(/[^\d.\-]/g,'') || 0);
+767:        let surN = Number(v('surcharge').replace(/[^\d.\-]/g,'') || 0);
+768:        let intN = Number(v('interest').replace(/[^\d.\-]/g,'') || 0);
+769:        let dscN = Number(v('discount').replace(/[^\d.\-]/g,'') || 0);
+770:        let expectedTotal = amtN + surN + intN - dscN;
+771:        let currentTotal = v('total').replace(/[^\d.\-]/g,'');
+772:        if (!isNaN(amtN) && !isNaN(surN) && !isNaN(intN) && !isNaN(dscN)) {
+773:            if (currentTotal === '' || Number(currentTotal) !== expectedTotal) {
+774:                row.total = expectedTotal.toString();
+775:                fixes.push('total: auto-calculated');
+776:            }
+777:        }
+778:    }
+779:    if (tableId === 'table4') {
+780:        let amtN = Number(v('amount').replace(/[^\d.\-]/g,'') || 0);
+781:        let surN = Number(v('Surcharge').replace(/[^\d.\-]/g,'') || 0);
+782:        let intN = Number(v('Interest').replace(/[^\d.\-]/g,'') || 0);
+783:        let dscN = Number(v('discount').replace(/[^\d.\-]/g,'') || 0);
+784:        let expectedTotal = Math.round((amtN + surN + intN - dscN) * 100) / 100;
+785:        let currentTotal = v('total').replace(/[^\d.\-]/g,'');
+786:        if (!isNaN(amtN) && !isNaN(surN) && !isNaN(intN) && !isNaN(dscN)) {
+787:            if (currentTotal === '' || Number(currentTotal) !== expectedTotal) {
+788:                row.total = String(expectedTotal);
+789:                fixes.push('total: auto-calculated');
+790:            }
+791:        }
+792:    }
+793:}
+794:
+795:document.getElementById('autocorrectBtn').addEventListener('click', () => {
+796:    Object.keys(appState).forEach(tid => {
+797:        let st = appState[tid];
+798:        if(!st.loaded) return;
+799:        
+800:        st.autocorrectedCells = {};
+801:        let df = schemas[tid] && schemas[tid].DATE_FIELDS ? schemas[tid].DATE_FIELDS : [];
+802:        
+803:        st.rows.forEach((row, idx) => {
+804:            let fixes = [];
+805:            
+806:            Object.keys(row).forEach(k => {
+807:                let orig = String(row[k]||'').trim();
+808:                let fixed = orig;
+809:                if (df.includes(k) && orig) {
+810:                    fixed = formatDate(orig);
+811:                }
+812:                let rule = schemas[tid].RULES[k];
+813:                if (rule && rule.allowed && orig) {
+814:                    let upper = orig.toUpperCase().trim();
+815:                    if (rule.allowed.includes(upper)) fixed = upper;
+816:                }
+817:                if (rule && rule.numeric && fixed) {
+818:                    let nStr = fixed.replace(/[^\d.\-]/g, '');
+819:                    if (nStr !== fixed && nStr !== '') fixed = nStr;
+820:                }
+821:                if (fixed !== orig) {
+822:                    fixes.push(`${k}: formatted`);
+823:                    row[k] = fixed;
+824:                }
+825:            });
+826:            
+827:            customAutoCorrect(tid, row, fixes);
+828:            
+829:            if (fixes.length > 0) {
+830:                st.autocorrectedCells[idx] = new Set(fixes.map(f => f.split(':')[0]));
+831:                fixes.forEach(f => {
+832:                    auditLog.push({table: tid, row: idx+1, type: 'AUTOCORRECT', message: f});
+833:                });
+834:            }
+835:        });
+836:    });
+837:    
+838:    // Re-validate all after autocorrect
+839:    document.getElementById('validateBtn').click();
+840:    alert('Autocorrect complete. Check Audit Log for details.');
+841:});
+842:
+843:
+844:document.getElementById('exportBtn').addEventListener('click', () => {
+845:  let st = appState[activeTableId];
+846:  let finalRows = st.rows.map(r => {
+847:    let out = {};
+848:    st.headers.forEach(h => {
+849:      let v = String(r[h] || '').trim();
+850:      if (v.startsWith('0') && !/^\d+$/.test(v)) v = "'" + v;
+851:      out[h] = v;
+852:    });
+853:    return out;
+854:  });
+855:  
+856:  let csv = Papa.unparse(finalRows, { columns: st.headers });
+857:  let blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+858:  let link = document.createElement('a');
+859:  link.href = URL.createObjectURL(blob);
+860:  link.download = 'validated_' + activeTableId + '_' + Date.now() + '.csv';
+861:  link.click();
+862:});
+863:
+864:document.getElementById('exportAuditBtn').addEventListener('click', () => {
+865:    let csv = Papa.unparse(auditLog, { columns: ['table', 'row', 'type', 'message'] });
+866:    let blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+867:    let link = document.createElement('a');
+868:    link.href = URL.createObjectURL(blob);
+869:    link.download = 'bpls_audit_log_' + Date.now() + '.csv';
+870:    link.click();
+871:});
+872:
+873:// Rules Editor Logic
+874:const modal = document.getElementById('rulesModal');
+875:const rulesSelect = document.getElementById('rulesTableSelect');
+876:const rulesEditor = document.getElementById('rulesEditor');
+877:
+878:document.getElementById('rulesBtn').addEventListener('click', () => {
+879:  rulesSelect.value = activeTableId || 'table1';
+880:  loadEditorRules();
+881:  modal.style.display = 'flex';
+882:});
+883:
+884:document.getElementById('closeModal').addEventListener('click', () => modal.style.display='none');
+885:
+886:rulesSelect.addEventListener('change', loadEditorRules);
+887:
+888:function loadEditorRules() {
+889:  let val = rulesSelect.value;
+890:  rulesEditor.value = JSON.stringify(schemas[val].RULES, null, 2);
+891:}
+892:
+893:document.getElementById('saveRules').addEventListener('click', () => {
+894:  try {
+895:    let newRules = JSON.parse(rulesEditor.value);
+896:    schemas[rulesSelect.value].RULES = newRules;
+897:    localStorage.setItem('bpls_rules_' + rulesSelect.value, JSON.stringify(newRules));
+898:    alert('✅ Rules saved successfully for ' + rulesSelect.value + '!');
+899:    document.getElementById('validateBtn').click();
+900:  } catch(e) {
+901:    alert('❌ Invalid JSON syntax. Please check your formatting.');
+902:  }
+903:});
+904:
+905:document.getElementById('resetRules').addEventListener('click', () => {
+906:  if(confirm('Reset ' + rulesSelect.value + ' validation rules to system defaults?')) {
+907:    localStorage.removeItem('bpls_rules_' + rulesSelect.value);
+908:    alert('To fully apply defaults, please reload the page.');
+909:    location.reload();
+910:  }
+911:});
+912:

@@ -419,7 +419,7 @@ const schemas = {
   business_bin: { rule: 'BIN Format: PSGC7-YEAR4-INC7', fix: 'Use format: 7-digit PSGC code + dash + 4-digit year + dash + 7-digit increment. Example: 1400101-2024-0000001' },
   application_type: { rule: 'Must be N, R, or Q', fix: 'Enter N for NEW, R for RENEWAL, or Q for QUARTERLY. Spaces are auto-stripped, case auto-uppercased.' },
   application_date: { rule: 'Required, format MM/DD/YYYY', fix: 'Enter date as MM/DD/YYYY. Example: 01/20/2024. Various date formats are auto-converted.' },
-  year: { rule: 'Required, 4-digit year (1900-2100)', fix: 'Enter a 4-digit year. Example: 2024. Must be between 1900 and 2100.' },
+  year: { rule: 'Required — must be GREATER than the BIN year (PSGC-YEAR-INC)', fix: 'Enter the application year (e.g. 2026). IMPORTANT: this year must be GREATER than the year in the BIN. Example: if BIN is 0201514-2025-0000001 then year must be 2026 or later. The main system enforces: year > BIN year.' },
   qtr_from: { rule: 'Optional, must be 1, 2, 3, or 4', fix: 'Enter a quarter number (1-4). Leave blank if not applicable.' },
   qtr_to: { rule: 'Optional, must be 1-4 and >= Qtr From', fix: 'Enter a quarter number (1-4). Must be greater than or equal to Qtr From if both are provided.' },
   amount: { rule: 'Required, non-negative number (decimals allowed)', fix: 'Enter the base amount as a number. Non-numeric characters are auto-stripped.' },
@@ -429,10 +429,10 @@ const schemas = {
   total: { rule: 'Required, must equal Amount + Surcharge + Interest - Discount', fix: 'Must equal amount + surcharge + interest - discount. Auto-corrected if blank or wrong when other numeric fields are valid.' },
   issued_date: { rule: 'Required, format MM/DD/YYYY', fix: 'Enter the issue date as MM/DD/YYYY. Example: 01/20/2024.' },
   valid_until: { rule: 'Required, format MM/DD/YYYY, must be >= Issued Date', fix: 'Enter the expiration date as MM/DD/YYYY. Must be on or after the Issued Date.' },
-  or_no: { rule: 'Required, alphanumeric, must be unique', fix: 'Enter a unique Official Receipt number (alphanumeric). Example: U12345678. Duplicates are flagged.' },
+  or_no: { rule: 'Required — must be GLOBALLY UNIQUE in the main system', fix: 'Enter a unique Official Receipt number. ⚠️ This must not duplicate any OR No. already existing in the main system database — not just within this file. Duplicates within this file are auto-detected. Example: OR-2026-00001.' },
   or_date: { rule: 'Required, format MM/DD/YYYY', fix: 'Enter the OR date as MM/DD/YYYY. Example: 01/20/2024.' },
-  permit_no: { rule: 'Optional, alphanumeric if provided', fix: 'Leave blank or enter the permit number (alphanumeric). Example: A-0001.' },
-  barangay_clearance_number: { rule: 'Optional, alphanumeric if provided', fix: 'Leave blank or enter the barangay clearance number (alphanumeric). Example: ABC-123.' },
+  permit_no: { rule: 'Optional — if provided, must be GLOBALLY UNIQUE in the main system', fix: 'Leave blank or enter the business permit number. ⚠️ If provided, must not duplicate any Permit No. already in the main system. Duplicates within this file are auto-detected. Example: BP-2026-00001.' },
+  barangay_clearance_number: { rule: 'Optional — if provided, must be GLOBALLY UNIQUE in the main system', fix: 'Leave blank or enter the barangay clearance number. ⚠️ If provided, must not duplicate any clearance number already in the main system. Duplicates within this file are auto-detected. Example: BCN-2026-00001.' },
   business_plate_number: { rule: 'Optional, alphanumeric if provided', fix: 'Leave blank or enter the business plate number (alphanumeric). Example: AA-0001.' },
   mode_of_payment: { rule: 'Must be ONLINE or MANUAL', fix: 'Enter ONLINE or MANUAL. Case auto-uppercased. Example: ONLINE.' }
 },
@@ -1077,6 +1077,17 @@ function customValidateRow(tableId, row, errs, seenLists) {
     }
     
     if (tableId === 'table3') {
+        let appYear = Number(g('year'));
+        let bin = g('business_bin');
+
+        // Rule: application year must be GREATER than the year embedded in the BIN
+        if (bin && /^\d{7}-(\d{4})-\d{7}$/.test(bin) && appYear) {
+            let binYear = Number(bin.split('-')[1]);
+            if (appYear <= binYear) {
+                errs.year = `Year (${appYear}) must be GREATER than BIN year (${binYear}). e.g. BIN is ${binYear}, so Year must be ${binYear + 1} or later.`;
+            }
+        }
+
         let qf = g('qtr_from'), qt = g('qtr_to');
         if (qf && qt && Number(qt) < Number(qf)) errs.qtr_to = 'Must be >= Qtr From';
         
@@ -1159,9 +1170,20 @@ function detectDuplicates(tableId, rows) {
         for (let b in map) if(map[b].length > 1) dups.push({table: tableId, keyField: 'bin', keyValue: b, indices: map[b]});
     }
     if (tableId === 'table3') {
-        let map = {};
-        rows.forEach((r, idx) => { let o = r?.or_no?.trim(); if(o) { map[o] = map[o] || []; map[o].push(idx); } });
-        for (let o in map) if(map[o].length > 1) dups.push({table: tableId, keyField: 'or_no', keyValue: o, indices: map[o]});
+        // or_no uniqueness
+        let mapOr = {};
+        rows.forEach((r, idx) => { let o = r?.or_no?.trim(); if(o) { mapOr[o] = mapOr[o] || []; mapOr[o].push(idx); } });
+        for (let o in mapOr) if(mapOr[o].length > 1) dups.push({table: tableId, keyField: 'or_no', keyValue: o, indices: mapOr[o]});
+
+        // permit_no uniqueness (skip blank)
+        let mapPm = {};
+        rows.forEach((r, idx) => { let p = r?.permit_no?.trim(); if(p) { mapPm[p] = mapPm[p] || []; mapPm[p].push(idx); } });
+        for (let p in mapPm) if(mapPm[p].length > 1) dups.push({table: tableId, keyField: 'permit_no', keyValue: p, indices: mapPm[p]});
+
+        // barangay_clearance_number uniqueness (skip blank)
+        let mapBc = {};
+        rows.forEach((r, idx) => { let b = r?.barangay_clearance_number?.trim(); if(b) { mapBc[b] = mapBc[b] || []; mapBc[b].push(idx); } });
+        for (let b in mapBc) if(mapBc[b].length > 1) dups.push({table: tableId, keyField: 'barangay_clearance_number', keyValue: b, indices: mapBc[b]});
     }
     return dups;
 }

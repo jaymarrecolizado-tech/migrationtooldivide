@@ -594,6 +594,17 @@ function customValidateRow(tableId, row, errs, seenLists) {
     }
     
     if (tableId === 'table3') {
+        let appYear = Number(g('year'));
+        let bin = g('business_bin');
+
+        // Rule: application year must be GREATER than the year embedded in the BIN
+        if (bin && /^\d{7}-(\d{4})-\d{7}$/.test(bin) && appYear) {
+            let binYear = Number(bin.split('-')[1]);
+            if (appYear <= binYear) {
+                errs.year = `Year (${appYear}) must be GREATER than BIN year (${binYear}). e.g. BIN is ${binYear}, so Year must be ${binYear + 1} or later.`;
+            }
+        }
+
         let qf = g('qtr_from'), qt = g('qtr_to');
         if (qf && qt && Number(qt) < Number(qf)) errs.qtr_to = 'Must be >= Qtr From';
         
@@ -676,9 +687,20 @@ function detectDuplicates(tableId, rows) {
         for (let b in map) if(map[b].length > 1) dups.push({table: tableId, keyField: 'bin', keyValue: b, indices: map[b]});
     }
     if (tableId === 'table3') {
-        let map = {};
-        rows.forEach((r, idx) => { let o = r?.or_no?.trim(); if(o) { map[o] = map[o] || []; map[o].push(idx); } });
-        for (let o in map) if(map[o].length > 1) dups.push({table: tableId, keyField: 'or_no', keyValue: o, indices: map[o]});
+        // or_no uniqueness
+        let mapOr = {};
+        rows.forEach((r, idx) => { let o = r?.or_no?.trim(); if(o) { mapOr[o] = mapOr[o] || []; mapOr[o].push(idx); } });
+        for (let o in mapOr) if(mapOr[o].length > 1) dups.push({table: tableId, keyField: 'or_no', keyValue: o, indices: mapOr[o]});
+
+        // permit_no uniqueness (skip blank)
+        let mapPm = {};
+        rows.forEach((r, idx) => { let p = r?.permit_no?.trim(); if(p) { mapPm[p] = mapPm[p] || []; mapPm[p].push(idx); } });
+        for (let p in mapPm) if(mapPm[p].length > 1) dups.push({table: tableId, keyField: 'permit_no', keyValue: p, indices: mapPm[p]});
+
+        // barangay_clearance_number uniqueness (skip blank)
+        let mapBc = {};
+        rows.forEach((r, idx) => { let b = r?.barangay_clearance_number?.trim(); if(b) { mapBc[b] = mapBc[b] || []; mapBc[b].push(idx); } });
+        for (let b in mapBc) if(mapBc[b].length > 1) dups.push({table: tableId, keyField: 'barangay_clearance_number', keyValue: b, indices: mapBc[b]});
     }
     return dups;
 }

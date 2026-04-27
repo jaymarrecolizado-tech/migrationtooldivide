@@ -229,6 +229,18 @@ function customValidateRow(tableId, row, errs, seenLists) {
         let cell = g('cellphone_no');
         if (cell && !/^639\d{9}$/.test(cell)) errs.cellphone_no = 'Must be 12 digits starting with 639';
         
+        let email = g('email_address');
+        if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errs.email_address = 'Invalid email format';
+
+        let tin = g('tin_no');
+        if (tin && !/^\d{3}-\d{3}-\d{3}-\d{5}$/.test(tin)) errs.tin_no = 'Format: 000-000-000-00000';
+
+        let pin = g('pin_no');
+        if (pin && !/^\d{3}-\d{2}-\d{3}-\d{2}-\d{3}$/.test(pin)) errs.pin_no = 'Format: 000-00-000-00-000';
+
+        let ext = g('incharge_extension_name');
+        if (ext && ext.includes('.')) errs.incharge_extension_name = 'Do not include period (.)';
+
         let bt = g('business_type');
         if (bt === 'SOLE PROPRIETORSHIP') {
             if (!g('dti_no')) errs.dti_no = 'Required for SOLE PROPRIETORSHIP';
@@ -551,6 +563,41 @@ function customAutoCorrect(tableId, row, fixes) {
         if (['yes', 'true', 'owned', '1.0'].includes(loc)) { row.location_owned = '1'; fixes.push('location_owned: converted to 1'); }
         else if (['no', 'false', 'rented', '0.0'].includes(loc)) { row.location_owned = '0'; fixes.push('location_owned: converted to 0'); }
         else if (loc !== '1' && loc !== '0' && loc !== '') { row.location_owned = ''; fixes.push('location_owned: cleared invalid'); }
+
+        let ext = v('incharge_extension_name');
+        if (ext && ext.includes('.')) {
+            row.incharge_extension_name = ext.replace(/\./g, '').trim();
+            fixes.push('incharge_extension_name: removed periods');
+        }
+
+        let tin = v('tin_no');
+        if (tin) {
+            let d = tin.replace(/[^\d]/g, '');
+            if (d.length === 14 && tin !== (d.substring(0,3)+'-'+d.substring(3,6)+'-'+d.substring(6,9)+'-'+d.substring(9,14))) {
+                row.tin_no = d.substring(0,3) + '-' + d.substring(3,6) + '-' + d.substring(6,9) + '-' + d.substring(9,14);
+                fixes.push('tin_no: auto-formatted');
+            }
+        }
+
+        let pin = v('pin_no');
+        if (pin) {
+            let d = pin.replace(/[^\d]/g, '');
+            if (d.length === 13 && pin !== (d.substring(0,3)+'-'+d.substring(3,5)+'-'+d.substring(5,8)+'-'+d.substring(8,10)+'-'+d.substring(10,13))) {
+                row.pin_no = d.substring(0,3) + '-' + d.substring(3,5) + '-' + d.substring(5,8) + '-' + d.substring(8,10) + '-' + d.substring(10,13);
+                fixes.push('pin_no: auto-formatted');
+            }
+        }
+
+        ['area','monthly_rental','no_of_male_employees','no_of_female_employees','no_of_employees_residing_within_the_area','no_of_van','no_of_truck','no_of_motorcycle'].forEach(f => {
+            let val = v(f);
+            if (val && val.includes('%')) {
+                let parsed = parseFloat(val.replace(/%/g, ''));
+                if (!isNaN(parsed)) {
+                    row[f] = String(parsed / 100);
+                    fixes.push(f + ': removed excel percentage formatting');
+                }
+            }
+        });
     }
     if (tableId === 'table3') {
         let amtN = Number(v('amount').replace(/[^\d.\-]/g,'') || 0);

@@ -229,7 +229,7 @@ function customValidateRow(tableId, row, errs, seenLists) {
         let bt = g('business_type');
         if (bt === 'SOLE PROPRIETORSHIP') {
             if (!g('dti_no')) errs.dti_no = 'Required for SOLE PROPRIETORSHIP';
-            if (!g('dti_registratrion_expiry_date')) errs.dti_registratrion_expiry_date = 'Required for SOLE PROPRIETORSHIP';
+            if (!g('dti_registration_expiry_date')) errs.dti_registration_expiry_date = 'Required for SOLE PROPRIETORSHIP';
         }
         if (['ONE PERSON CORPORATION','PARTNERSHIP','CORPORATION'].includes(bt) && !g('sec_no')) errs.sec_no = 'Required for ' + bt;
         if (bt === 'COOPERATIVE' && !g('cda_no')) errs.cda_no = 'Required for COOPERATIVE';

@@ -248,7 +248,7 @@ const schemas = {
     allowed: ['SOLE PROPRIETORSHIP','ONE PERSON CORPORATION','PARTNERSHIP','CORPORATION','COOPERATIVE']
   },
   dti_no: { required: false, conditional: true, label: 'DTI No.', min: 3, max: 30 },
-  dti_registratrion_expiry_date: { required: false, conditional: true, label: 'DTI Expiry Date' },
+  dti_registration_expiry_date: { required: false, conditional: true, label: 'DTI Expiry Date' },
   sec_no: { required: false, conditional: true, label: 'SEC No.', min: 3, max: 30 },
   cda_no: { required: false, conditional: true, label: 'CDA No.', min: 3, max: 30 },
   tin_no: { required: false, label: 'TIN No.' },
@@ -287,7 +287,7 @@ const schemas = {
   trade_name: { rule: 'Optional, 3-100 characters if provided', fix: 'Leave blank or enter a trade/brand name between 3-100 characters.' },
   business_type: { rule: 'Must be one of 5 allowed types', fix: 'Use exactly: SOLE PROPRIETORSHIP, ONE PERSON CORPORATION, PARTNERSHIP, CORPORATION, or COOPERATIVE' },
   dti_no: { rule: 'Required if SOLE PROPRIETORSHIP', fix: 'Enter DTI registration number (3-30 chars). Required when Business Type is SOLE PROPRIETORSHIP.' },
-  dti_registratrion_expiry_date: { rule: 'Required if SOLE PROPRIETORSHIP, format MM/DD/YYYY', fix: 'Enter date as MM/DD/YYYY. Example: 12/31/2025. Required when Business Type is SOLE PROPRIETORSHIP.' },
+  dti_registration_expiry_date: { rule: 'Required if SOLE PROPRIETORSHIP, format MM/DD/YYYY', fix: 'Enter date as MM/DD/YYYY. Example: 12/31/2025. Required when Business Type is SOLE PROPRIETORSHIP.' },
   sec_no: { rule: 'Required for OPC/PARTNERSHIP/CORPORATION', fix: 'Enter SEC registration number (3-30 chars). Required when Business Type is ONE PERSON CORPORATION, PARTNERSHIP, or CORPORATION.' },
   cda_no: { rule: 'Required if COOPERATIVE', fix: 'Enter CDA registration number (3-30 chars). Required when Business Type is COOPERATIVE.' },
   tin_no: { rule: 'Optional, numbers and dashes only', fix: 'Enter TIN using digits and dashes only. Example: 123-456-789' },
@@ -322,7 +322,7 @@ const schemas = {
 },
     FIELD_ORDER: [
   'bin','business_name','trade_name','business_type',
-  'dti_no','dti_registratrion_expiry_date','sec_no','cda_no','tin_no',
+  'dti_no','dti_registration_expiry_date','sec_no','cda_no','tin_no',
   'email_address','cellphone_no','telephone_no',
   'incharge_first_name','incharge_middle_name','incharge_last_name','incharge_extension_name',
   'incharge_sex','incharge_country_of_citizenship','incharge_street',
@@ -333,7 +333,7 @@ const schemas = {
   'no_of_employees_residing_within_the_area',
   'no_of_van','no_of_truck','no_of_motorcycle','activity_type'
 ],
-    DATE_FIELDS: ['dti_registratrion_expiry_date']
+    DATE_FIELDS: ['dti_registration_expiry_date']
   },
   table2: {
     RULES: {
@@ -676,7 +676,7 @@ function customValidateRow(tableId, row, errs, seenLists) {
         let bt = g('business_type');
         if (bt === 'SOLE PROPRIETORSHIP') {
             if (!g('dti_no')) errs.dti_no = 'Required for SOLE PROPRIETORSHIP';
-            if (!g('dti_registratrion_expiry_date')) errs.dti_registratrion_expiry_date = 'Required for SOLE PROPRIETORSHIP';
+            if (!g('dti_registration_expiry_date')) errs.dti_registration_expiry_date = 'Required for SOLE PROPRIETORSHIP';
         }
         if (['ONE PERSON CORPORATION','PARTNERSHIP','CORPORATION'].includes(bt) && !g('sec_no')) errs.sec_no = 'Required for ' + bt;
         if (bt === 'COOPERATIVE' && !g('cda_no')) errs.cda_no = 'Required for COOPERATIVE';

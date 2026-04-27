@@ -493,7 +493,7 @@ document.getElementById('csvFile').addEventListener('change', (e) => {
                 };
                 
                 let tab = document.querySelector(`.tab[data-target="${detectedId}"]`);
-                tab.classList.remove('disabled');
+                if(tab) tab.classList.remove('disabled');
                 
                 auditLog.push({table: detectedId, row: 'System', type: 'INFO', message: `Loaded ${results.data.length} rows.`});
                 
@@ -521,7 +521,8 @@ document.querySelectorAll('.tab').forEach(t => {
 
 function switchTab(tableId) {
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-    document.querySelector(`.tab[data-target="${tableId}"]`).classList.add('active');
+    let tab = document.querySelector(`.tab[data-target="${tableId}"]`);
+    if(tab) tab.classList.add('active');
     activeTableId = tableId;
     currentPage = 1;
     
@@ -573,14 +574,14 @@ function renderTable() {
     orderedHeaders.forEach(h => {
         let rule = schema.RULES[h];
         let badge = rule && rule.required ? '<span style="color:#ef4444">*</span>' : (!rule ? '' : '<span style="color:#94a3b8;font-size:10px">opt</span>');
-        html += '<th>' + (rule?.label || h) + ' ' + badge + '</th>';
+        html += `<th>${rule?.label || h} ${badge}</th>`;
     });
     html += '</tr></thead><tbody>';
 
     for (let rIdx = startIdx; rIdx < endIdx; rIdx++) {
         let row = st.rows[rIdx];
         let hasErr = st.cellErrors[rIdx] && Object.keys(st.cellErrors[rIdx]).length > 0;
-        html += '<tr class="' + (hasErr ? 'has-error' : '') + '"><td class="row-num">' + (rIdx+1) + '</td>';
+        html += `<tr class="${hasErr ? 'has-error' : ''}"><td class="row-num">${rIdx+1}</td>`;
         orderedHeaders.forEach(key => {
             let err = st.cellErrors[rIdx]?.[key];
             let isAuto = st.autocorrectedCells[rIdx] && st.autocorrectedCells[rIdx].has(key);
@@ -650,12 +651,11 @@ function showTooltip(input) {
 }
 function hideTooltip() { tipEl.style.display = 'none'; }
 
-
 function formatDate(raw) {
   if (!raw || !raw.trim()) return '';
   let s = raw.trim().replace(/^'+/, '');
   let formatted = '';
-  if (/^d{2}/d{2}/d{4}$/.test(s)) {
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(s)) {
       formatted = s;
   } else {
       let d = new Date(s);
@@ -790,12 +790,12 @@ function detectDuplicates(tableId, rows) {
     let dups = [];
     if (tableId === 'table1') {
         let map = {};
-        rows.forEach((r, idx) => { let b = r.bin?.trim(); if(b) { map[b] = map[b] || []; map[b].push(idx); } });
+        rows.forEach((r, idx) => { let b = r?.bin?.trim(); if(b) { map[b] = map[b] || []; map[b].push(idx); } });
         for (let b in map) if(map[b].length > 1) dups.push({table: tableId, keyField: 'bin', keyValue: b, indices: map[b]});
     }
     if (tableId === 'table3') {
         let map = {};
-        rows.forEach((r, idx) => { let o = r.or_no?.trim(); if(o) { map[o] = map[o] || []; map[o].push(idx); } });
+        rows.forEach((r, idx) => { let o = r?.or_no?.trim(); if(o) { map[o] = map[o] || []; map[o].push(idx); } });
         for (let o in map) if(map[o].length > 1) dups.push({table: tableId, keyField: 'or_no', keyValue: o, indices: map[o]});
     }
     return dups;
@@ -838,6 +838,7 @@ function processDuplicatesModal() {
     
     dup.indices.forEach(rowIdx => {
         let row = st.rows[rowIdx];
+        if(!row) return; // already deleted
         let card = document.createElement('div');
         card.className = 'dup-card';
         let html = `<div style="font-weight:bold; margin-bottom:10px;">Row ${rowIdx+1} (${dup.keyField}: ${dup.keyValue})</div>`;
@@ -879,7 +880,7 @@ function processDuplicatesModal() {
 document.getElementById('skipDup').addEventListener('click', () => {
     document.getElementById('dupModal').style.display = 'none';
     let dup = pendingDuplicates[0];
-    auditLog.push({table: dup.table, row: 'System', type: 'DEDUPLICATION', message: `Skipped manual resolution for ${dup.keyField} ${dup.keyValue}`});
+    if(dup) auditLog.push({table: dup.table, row: 'System', type: 'DEDUPLICATION', message: `Skipped manual resolution for ${dup.keyField} ${dup.keyValue}`});
     
     if (pendingDuplicates.length > 0) {
         processDuplicatesModal();
@@ -893,9 +894,7 @@ document.getElementById('closeDupModal').addEventListener('click', () => {
     finalizeValidation(activeTableId);
 });
 
-
 document.getElementById('validateBtn').addEventListener('click', () => {
-    // Validate all loaded tables
     Object.keys(appState).forEach(tid => {
         if(appState[tid].loaded) executeValidation(tid);
     });
@@ -910,8 +909,8 @@ function executeValidation(tableId) {
     let dups = detectDuplicates(tableId, st.rows);
     if (dups.length > 0) {
         pendingDuplicates = pendingDuplicates.concat(dups);
-        if (tableId === activeTableId) processDuplicatesModal(); // Start modal chain
-        return; // Pause validation until dups resolved
+        if (tableId === activeTableId) processDuplicatesModal();
+        return; 
     }
     
     finalizeValidation(tableId);
@@ -921,15 +920,14 @@ function finalizeValidation(tableId) {
     let st = appState[tableId];
     let seenLists = {};
     
-    // Reset MasterStore for table 1
     if (tableId === 'table1') MasterStore.validBINs.clear();
 
     st.rows.forEach((row, idx) => {
+        if(!row) return;
         let errs = validateSingleRow(tableId, row, idx, seenLists);
         if (Object.keys(errs).length > 0) {
             st.cellErrors[idx] = errs;
         } else {
-            // Valid row logic
             if (tableId === 'table1') {
                 let bin = row['bin'];
                 if (bin) MasterStore.validBINs.add(bin);
@@ -971,7 +969,7 @@ function updateStatusUI() {
         let html = `<h4><span style="font-size:16px">⚠</span> Error Summary (${errCount})</h4>`;
         let counter = 0;
         Object.entries(st.cellErrors).forEach(([r, errs]) => {
-            if (counter > 50) return; // limit summary
+            if (counter > 50) return; 
             let errStr = Object.entries(errs).map(([k,v]) => `<b>${k}</b>: ${v}`).join(' | ');
             html += `<div class="err-row">Row ${(Number(r)+1)}: ${errStr}</div>`;
             counter++;
@@ -980,7 +978,6 @@ function updateStatusUI() {
         sum.innerHTML = html;
     }
 }
-
 
 function customAutoCorrect(tableId, row, fixes) {
     const v = (k) => (row[k] == null ? '' : String(row[k])).trim();
@@ -1038,6 +1035,7 @@ document.getElementById('autocorrectBtn').addEventListener('click', () => {
         let df = schemas[tid] && schemas[tid].DATE_FIELDS ? schemas[tid].DATE_FIELDS : [];
         
         st.rows.forEach((row, idx) => {
+            if(!row) return;
             let fixes = [];
             
             Object.keys(row).forEach(k => {
@@ -1072,15 +1070,14 @@ document.getElementById('autocorrectBtn').addEventListener('click', () => {
         });
     });
     
-    // Re-validate all after autocorrect
     document.getElementById('validateBtn').click();
     alert('Autocorrect complete. Check Audit Log for details.');
 });
 
-
 document.getElementById('exportBtn').addEventListener('click', () => {
   let st = appState[activeTableId];
   let finalRows = st.rows.map(r => {
+    if(!r) return null;
     let out = {};
     st.headers.forEach(h => {
       let v = String(r[h] || '').trim();
@@ -1088,7 +1085,7 @@ document.getElementById('exportBtn').addEventListener('click', () => {
       out[h] = v;
     });
     return out;
-  });
+  }).filter(r => r !== null);
   
   let csv = Papa.unparse(finalRows, { columns: st.headers });
   let blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
@@ -1146,6 +1143,7 @@ document.getElementById('resetRules').addEventListener('click', () => {
     location.reload();
   }
 });
+
 </script>
 </body>
 </html>

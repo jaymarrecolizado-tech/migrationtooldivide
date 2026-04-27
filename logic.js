@@ -15,13 +15,13 @@ const rowsPerPage = 100;
 let pendingDuplicates = []; // Array of { table, key, rowIndices }
 
 // ── INPUT MASK HELPERS ──
-// TIN format: 000-000-000-00000  (3-3-3-5 digits, max 17 chars)
+// TIN format: 999-999-999-999  (3-3-3-3 digits, max 15 chars)
 function applyTINMask(val) {
-    let d = val.replace(/\D/g, '').substring(0, 14);
+    let d = val.replace(/\D/g, '').substring(0, 12);
     let out = d.substring(0, 3);
     if (d.length > 3)  out += '-' + d.substring(3, 6);
     if (d.length > 6)  out += '-' + d.substring(6, 9);
-    if (d.length > 9)  out += '-' + d.substring(9, 14);
+    if (d.length > 9)  out += '-' + d.substring(9, 12);
     return out;
 }
 // PIN format: 000-00-000-00-000  (3-2-3-2-3 digits, max 17 chars)
@@ -191,7 +191,7 @@ function renderTable() {
                 // ── MASKED TEXT INPUT ──
                 let maxLen = rule.max || '';
                 if (key === 'cellphone_no') maxLen = '13';
-                if (key === 'tin_no') maxLen = '17';     // 000-000-000-00000
+                if (key === 'tin_no') maxLen = '15';     // 999-999-999-999
                 if (key === 'pin_no') maxLen = '17';     // 000-00-000-00-000
                 if (key === 'tdn_no') maxLen = '20';     // alphanumeric, free format
                 if (key === 'bin' || key === 'business_bin') maxLen = '19';
@@ -334,7 +334,7 @@ function customValidateRow(tableId, row, errs, seenLists) {
         if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errs.email_address = 'Invalid email format';
 
         let tin = g('tin_no');
-        if (tin && !/^\d{3}-\d{3}-\d{3}-\d{5}$/.test(tin)) errs.tin_no = 'Format: 000-000-000-00000';
+        if (tin && !/^\d{3}-\d{3}-\d{3}-\d{3}$/.test(tin)) errs.tin_no = 'Format: 999-999-999-999';
 
         let pin = g('pin_no');
         if (pin && !/^\d{3}-\d{2}-\d{3}-\d{2}-\d{3}$/.test(pin)) errs.pin_no = 'Format: 000-00-000-00-000';
@@ -674,9 +674,9 @@ function customAutoCorrect(tableId, row, fixes) {
         let tin = v('tin_no');
         if (tin) {
             let d = tin.replace(/[^\d]/g, '');
-            if (d.length === 14 && tin !== (d.substring(0,3)+'-'+d.substring(3,6)+'-'+d.substring(6,9)+'-'+d.substring(9,14))) {
-                row.tin_no = d.substring(0,3) + '-' + d.substring(3,6) + '-' + d.substring(6,9) + '-' + d.substring(9,14);
-                fixes.push('tin_no: auto-formatted');
+            if (d.length === 12 && tin !== (d.substring(0,3)+'-'+d.substring(3,6)+'-'+d.substring(6,9)+'-'+d.substring(9,12))) {
+                row.tin_no = d.substring(0,3) + '-' + d.substring(3,6) + '-' + d.substring(6,9) + '-' + d.substring(9,12);
+                fixes.push('tin_no: auto-formatted to 999-999-999-999');
             }
         }
 
@@ -794,13 +794,11 @@ document.getElementById('exportBtn').addEventListener('click', () => {
     st.headers.forEach(h => {
       let v = String(r[h] || '').trim();
       
-      // Force text formatting for Excel to prevent scientific notation or dropping leading zeros
-      if (v && /^\d+$/.test(v)) {
-          if (h === 'cellphone_no' || h === 'telephone_no' || h === 'tin_no' || v.length > 10 || (v.startsWith('0') && v.length > 1)) {
-              v = "'" + v;
-          }
-      }
+      // Strip Excel text-force prefix (') before writing to CSV - PHP importer reads raw values
+      if (v.startsWith("'")) v = v.substring(1);
       
+      // Re-add text quote only for cellphone in the Excel sense — but for CSV export, just output clean value
+      // The '639... prefix was for Excel display only; PHP needs the raw number string
       out[h] = v;
     });
     return out;

@@ -506,127 +506,484 @@ let selectedLGU = null; // { province, municipality, psgcPrefix }
 // BIN PSGC format: '0' + '20'(Region2) + 2-digit-province + 2-digit-municipality
 // Formula: psgcPrefix = '0' + '20' + provinceCode + municipalityCode
 const REGION2_LGUS = {
-    batanes: {
-        label: 'Batanes',
-        code: '09',
-        municipalities: [
-            { name: 'Basco (Capital)', code: '01' },
-            { name: 'Itbayat',         code: '02' },
-            { name: 'Ivana',           code: '03' },
-            { name: 'Mahatao',         code: '04' },
-            { name: 'Sabtang',         code: '05' },
-            { name: 'Uyugan',          code: '06' },
+    "batanes": {
+        "label": "Batanes",
+        "code": "09",
+        "municipalities": [
+            {
+                "name": "Basco (Capital)",
+                "code": "01",
+                "psgc7": "0200901"
+            },
+            {
+                "name": "Itbayat",
+                "code": "02",
+                "psgc7": "0200902"
+            },
+            {
+                "name": "Ivana",
+                "code": "03",
+                "psgc7": "0200903"
+            },
+            {
+                "name": "Mahatao",
+                "code": "04",
+                "psgc7": "0200904"
+            },
+            {
+                "name": "Sabtang",
+                "code": "05",
+                "psgc7": "0200905"
+            },
+            {
+                "name": "Uyugan",
+                "code": "06",
+                "psgc7": "0200906"
+            }
         ]
     },
-    cagayan: {
-        label: 'Cagayan',
-        code: '15',
-        municipalities: [
-            { name: 'Abulug',                  code: '01' },
-            { name: 'Alcala',                  code: '02' },
-            { name: 'Allacapan',               code: '03' },
-            { name: 'Amulung',                 code: '04' },
-            { name: 'Aparri',                  code: '05' },
-            { name: 'Baggao',                  code: '06' },
-            { name: 'Ballesteros',             code: '07' },
-            { name: 'Buguey',                  code: '08' },
-            { name: 'Calayan',                 code: '09' },
-            { name: 'Camalaniugan',            code: '10' },
-            { name: 'Claveria',                code: '11' },
-            { name: 'Enrile',                  code: '12' },
-            { name: 'Gattaran',                code: '13' },
-            { name: 'Gonzaga',                 code: '14' }, // ✓ verified from sample data
-            { name: 'Iguig',                   code: '15' },
-            { name: "Lal-lo",                  code: '16' },
-            { name: 'Lasam',                   code: '17' },
-            { name: 'Pamplona',                code: '18' },
-            { name: 'Peñablanca',              code: '19' },
-            { name: 'Piat',                    code: '20' },
-            { name: 'Rizal',                   code: '21' },
-            { name: 'Sanchez-Mira',            code: '22' },
-            { name: 'Santa Ana',               code: '23' },
-            { name: 'Santa Praxedes',          code: '24' },
-            { name: 'Santa Teresita',          code: '25' },
-            { name: 'Santo Niño (Faire)',       code: '26' },
-            { name: 'Solana',                  code: '27' },
-            { name: 'Tuao',                    code: '28' },
-            { name: 'Tuguegarao City',         code: '29' }, // ✓ verified
+    "cagayan": {
+        "label": "Cagayan",
+        "code": "15",
+        "municipalities": [
+            {
+                "name": "Tuguegarao City (Capital)",
+                "code": "28",
+                "psgc7": "0201528"
+            },
+            {
+                "name": "Abulug",
+                "code": "01",
+                "psgc7": "0201501"
+            },
+            {
+                "name": "Alcala",
+                "code": "02",
+                "psgc7": "0201502"
+            },
+            {
+                "name": "Allacapan",
+                "code": "03",
+                "psgc7": "0201503"
+            },
+            {
+                "name": "Amulung",
+                "code": "04",
+                "psgc7": "0201504"
+            },
+            {
+                "name": "Aparri",
+                "code": "05",
+                "psgc7": "0201505"
+            },
+            {
+                "name": "Baggao",
+                "code": "06",
+                "psgc7": "0201506"
+            },
+            {
+                "name": "Ballesteros",
+                "code": "07",
+                "psgc7": "0201507"
+            },
+            {
+                "name": "Buguey",
+                "code": "08",
+                "psgc7": "0201508"
+            },
+            {
+                "name": "Calayan",
+                "code": "09",
+                "psgc7": "0201509"
+            },
+            {
+                "name": "Camalaniugan",
+                "code": "10",
+                "psgc7": "0201510"
+            },
+            {
+                "name": "Claveria",
+                "code": "11",
+                "psgc7": "0201511"
+            },
+            {
+                "name": "Enrile",
+                "code": "12",
+                "psgc7": "0201512"
+            },
+            {
+                "name": "Gattaran",
+                "code": "13",
+                "psgc7": "0201513"
+            },
+            {
+                "name": "Gonzaga",
+                "code": "14",
+                "psgc7": "0201514"
+            },
+            {
+                "name": "Iguig",
+                "code": "15",
+                "psgc7": "0201515"
+            },
+            {
+                "name": "Lal-lo",
+                "code": "16",
+                "psgc7": "0201516"
+            },
+            {
+                "name": "Lasam",
+                "code": "17",
+                "psgc7": "0201517"
+            },
+            {
+                "name": "Pamplona",
+                "code": "18",
+                "psgc7": "0201518"
+            },
+            {
+                "name": "Peñablanca",
+                "code": "19",
+                "psgc7": "0201519"
+            },
+            {
+                "name": "Piat",
+                "code": "20",
+                "psgc7": "0201520"
+            },
+            {
+                "name": "Rizal",
+                "code": "21",
+                "psgc7": "0201521"
+            },
+            {
+                "name": "Sanchez-Mira",
+                "code": "22",
+                "psgc7": "0201522"
+            },
+            {
+                "name": "Santa Ana",
+                "code": "23",
+                "psgc7": "0201523"
+            },
+            {
+                "name": "Santa Praxedes",
+                "code": "24",
+                "psgc7": "0201524"
+            },
+            {
+                "name": "Santa Teresita",
+                "code": "25",
+                "psgc7": "0201525"
+            },
+            {
+                "name": "Santo Niño",
+                "code": "26",
+                "psgc7": "0201526"
+            },
+            {
+                "name": "Sua",
+                "code": "27",
+                "psgc7": "0201527"
+            }
         ]
     },
-    isabela: {
-        label: 'Isabela',
-        code: '31',
-        municipalities: [
-            { name: 'Alicia',              code: '01' },
-            { name: 'Angadanan',           code: '02' },
-            { name: 'Aurora',              code: '03' },
-            { name: 'Benito Soliven',      code: '04' },
-            { name: 'Burgos',              code: '05' },
-            { name: 'Cabagan',             code: '06' },
-            { name: 'Cabatuan',            code: '07' },
-            { name: 'Cauayan City',        code: '08' },
-            { name: 'Cordon',              code: '09' },
-            { name: 'Delfin Albano',       code: '10' },
-            { name: 'Dinapigue',           code: '11' },
-            { name: 'Divilacan',           code: '12' },
-            { name: 'Echague',             code: '13' },
-            { name: 'Gamu',               code: '14' },
-            { name: 'Ilagan City',         code: '15' },
-            { name: 'Jones',               code: '16' },
-            { name: 'Luna',               code: '17' },
-            { name: 'Maconacon',           code: '18' },
-            { name: 'Mallig',              code: '19' },
-            { name: 'Naguilian',           code: '20' },
-            { name: 'Palanan',             code: '21' },
-            { name: 'Quezon',              code: '22' },
-            { name: 'Quirino',             code: '23' },
-            { name: 'Ramon',               code: '24' },
-            { name: 'Reina Mercedes',      code: '25' },
-            { name: 'Roxas',               code: '26' },
-            { name: 'San Agustin',         code: '27' },
-            { name: 'San Guillermo',       code: '28' },
-            { name: 'San Isidro',          code: '29' },
-            { name: 'San Manuel',          code: '30' },
-            { name: 'San Mariano',         code: '31' },
-            { name: 'San Mateo',           code: '32' },
-            { name: 'San Pablo',           code: '33' },
-            { name: 'Santa Maria',         code: '34' },
-            { name: 'Santiago City',       code: '35' }, // ✓ verified
-            { name: 'Santo Tomas',         code: '36' },
-            { name: 'Tumauini',            code: '37' },
+    "isabela": {
+        "label": "Isabela",
+        "code": "31",
+        "municipalities": [
+            {
+                "name": "Ilagan City (Capital)",
+                "code": "14",
+                "psgc7": "0203114"
+            },
+            {
+                "name": "Santiago City (Independent)",
+                "code": "35",
+                "psgc7": "0203135"
+            },
+            {
+                "name": "Cauayan City",
+                "code": "08",
+                "psgc7": "0203108"
+            },
+            {
+                "name": "Alicia",
+                "code": "01",
+                "psgc7": "0203101"
+            },
+            {
+                "name": "Angadanan",
+                "code": "02",
+                "psgc7": "0203102"
+            },
+            {
+                "name": "Aurora",
+                "code": "03",
+                "psgc7": "0203103"
+            },
+            {
+                "name": "Benito Soliven",
+                "code": "04",
+                "psgc7": "0203104"
+            },
+            {
+                "name": "Burgos",
+                "code": "05",
+                "psgc7": "0203105"
+            },
+            {
+                "name": "Cabagan",
+                "code": "06",
+                "psgc7": "0203106"
+            },
+            {
+                "name": "Cabatuan",
+                "code": "07",
+                "psgc7": "0203107"
+            },
+            {
+                "name": "Cordon",
+                "code": "09",
+                "psgc7": "0203109"
+            },
+            {
+                "name": "Delfin Albano",
+                "code": "10",
+                "psgc7": "0203110"
+            },
+            {
+                "name": "Dinapigue",
+                "code": "11",
+                "psgc7": "0203111"
+            },
+            {
+                "name": "Divilacan",
+                "code": "12",
+                "psgc7": "0203112"
+            },
+            {
+                "name": "Echague",
+                "code": "13",
+                "psgc7": "0203113"
+            },
+            {
+                "name": "Jones",
+                "code": "15",
+                "psgc7": "0203115"
+            },
+            {
+                "name": "Luna",
+                "code": "16",
+                "psgc7": "0203116"
+            },
+            {
+                "name": "Maconacon",
+                "code": "17",
+                "psgc7": "0203117"
+            },
+            {
+                "name": "Mallig",
+                "code": "18",
+                "psgc7": "0203118"
+            },
+            {
+                "name": "Naguilian",
+                "code": "19",
+                "psgc7": "0203119"
+            },
+            {
+                "name": "Palanan",
+                "code": "20",
+                "psgc7": "0203120"
+            },
+            {
+                "name": "Quezon",
+                "code": "21",
+                "psgc7": "0203121"
+            },
+            {
+                "name": "Quirino",
+                "code": "22",
+                "psgc7": "0203122"
+            },
+            {
+                "name": "Ramon",
+                "code": "23",
+                "psgc7": "0203123"
+            },
+            {
+                "name": "Reina Mercedes",
+                "code": "24",
+                "psgc7": "0203124"
+            },
+            {
+                "name": "Roxas",
+                "code": "25",
+                "psgc7": "0203125"
+            },
+            {
+                "name": "San Agustin",
+                "code": "26",
+                "psgc7": "0203126"
+            },
+            {
+                "name": "San Guillermo",
+                "code": "27",
+                "psgc7": "0203127"
+            },
+            {
+                "name": "San Isidro",
+                "code": "28",
+                "psgc7": "0203128"
+            },
+            {
+                "name": "San Mariano",
+                "code": "29",
+                "psgc7": "0203129"
+            },
+            {
+                "name": "San Mateo",
+                "code": "30",
+                "psgc7": "0203130"
+            },
+            {
+                "name": "San Pablo",
+                "code": "31",
+                "psgc7": "0203131"
+            },
+            {
+                "name": "Santa Maria",
+                "code": "32",
+                "psgc7": "0203132"
+            },
+            {
+                "name": "Santo Tomas",
+                "code": "33",
+                "psgc7": "0203133"
+            },
+            {
+                "name": "Tumauini",
+                "code": "34",
+                "psgc7": "0203134"
+            }
         ]
     },
-    nueva_vizcaya: {
-        label: 'Nueva Vizcaya',
-        code: '50',
-        municipalities: [
-            { name: 'Alfonso Castañeda', code: '01' },
-            { name: 'Ambaguio',          code: '02' },
-            { name: 'Aritao',            code: '03' },
-            { name: 'Bagabag',           code: '04' },
-            { name: 'Bambang',           code: '05' },
-            { name: 'Bayombong',         code: '06' }, // capital
-            { name: 'Diadi',             code: '07' },
-            { name: 'Dupax del Norte',   code: '08' },
-            { name: 'Dupax del Sur',     code: '09' },
-            { name: 'Kasibu',            code: '10' },
-            { name: 'Kayapa',            code: '11' },
-            { name: 'Quezon',            code: '12' },
-            { name: 'Santa Fe',          code: '13' },
-            { name: 'Solano',            code: '14' },
-            { name: 'Villaverde',        code: '15' },
+    "nueva_vizcaya": {
+        "label": "Nueva Vizcaya",
+        "code": "50",
+        "municipalities": [
+            {
+                "name": "Bayombong (Capital)",
+                "code": "04",
+                "psgc7": "0205004"
+            },
+            {
+                "name": "Alfonso Castañeda",
+                "code": "15",
+                "psgc7": "0205015"
+            },
+            {
+                "name": "Ambaguio",
+                "code": "01",
+                "psgc7": "0205001"
+            },
+            {
+                "name": "Aritao",
+                "code": "02",
+                "psgc7": "0205002"
+            },
+            {
+                "name": "Bagabag",
+                "code": "03",
+                "psgc7": "0205003"
+            },
+            {
+                "name": "Bambang",
+                "code": "05",
+                "psgc7": "0205005"
+            },
+            {
+                "name": "Diadi",
+                "code": "06",
+                "psgc7": "0205006"
+            },
+            {
+                "name": "Dupax del Norte",
+                "code": "07",
+                "psgc7": "0205007"
+            },
+            {
+                "name": "Dupax del Sur",
+                "code": "08",
+                "psgc7": "0205008"
+            },
+            {
+                "name": "Kasibu",
+                "code": "09",
+                "psgc7": "0205009"
+            },
+            {
+                "name": "Kayapa",
+                "code": "10",
+                "psgc7": "0205010"
+            },
+            {
+                "name": "Quezon",
+                "code": "11",
+                "psgc7": "0205011"
+            },
+            {
+                "name": "Santa Fe",
+                "code": "12",
+                "psgc7": "0205012"
+            },
+            {
+                "name": "Solano",
+                "code": "13",
+                "psgc7": "0205013"
+            },
+            {
+                "name": "Villaverde",
+                "code": "14",
+                "psgc7": "0205014"
+            }
         ]
     },
-    quirino: {
-        label: 'Quirino',
-        code: '57',
-        municipalities: [
-            { name: 'Aglipay',       code: '01' },
-            { name: 'Cabarroguis',   code: '02' }, // capital
-            { name: 'Diffun',        code: '03' },
-            { name: 'Maddela',       code: '04' },
-            { name: 'Nagtipunan',    code: '05' },
-            { name: 'Saguday',       code: '06' },
+    "quirino": {
+        "label": "Quirino",
+        "code": "57",
+        "municipalities": [
+            {
+                "name": "Cabarroguis (Capital)",
+                "code": "02",
+                "psgc7": "0205702"
+            },
+            {
+                "name": "Aglipay",
+                "code": "01",
+                "psgc7": "0205701"
+            },
+            {
+                "name": "Diffun",
+                "code": "03",
+                "psgc7": "0205703"
+            },
+            {
+                "name": "Maddela",
+                "code": "04",
+                "psgc7": "0205704"
+            },
+            {
+                "name": "Nagtipunan",
+                "code": "05",
+                "psgc7": "0205705"
+            },
+            {
+                "name": "Saguday",
+                "code": "06",
+                "psgc7": "0205706"
+            }
         ]
     }
 };
@@ -635,8 +992,12 @@ function computePSGCPrefix(provinceKey, municipalityCode) {
     if (!provinceKey || !municipalityCode) return null;
     let prov = REGION2_LGUS[provinceKey];
     if (!prov) return null;
-    return '0' + '20' + prov.code + municipalityCode;
+    let muni = prov.municipalities.find(m => m.code === municipalityCode);
+    if (!muni) return null;
+    return muni.psgc7;
 }
+
+
 
 
 // ── INPUT MASK HELPERS ──
@@ -740,10 +1101,32 @@ document.getElementById('csvFile').addEventListener('change', (e) => {
                 let headers = results.meta.fields || [];
                 let detectedId = detectTableType(headers);
                 
+                // ── HEADER NORMALIZATION ── Fix common CSV column name typos
+                const HEADER_ALIASES = {
+                    'dti_registratrion_expiry_date': 'dti_registration_expiry_date',
+                    'dti_registration_expiry': 'dti_registration_expiry_date',
+                    'dti_expiry_date': 'dti_registration_expiry_date',
+                    'dti_expiry': 'dti_registration_expiry_date'
+                };
+                let headerMap = {};
+                headers.forEach(h => {
+                    let normalized = HEADER_ALIASES[h.trim().toLowerCase()] || h.trim();
+                    headerMap[h] = normalized;
+                });
+                let normalizedHeaders = headers.map(h => headerMap[h]);
+                
+                let normalizedRows = results.data.map(row => {
+                    let newRow = {};
+                    Object.keys(row).forEach(k => {
+                        newRow[headerMap[k] || k] = row[k];
+                    });
+                    return newRow;
+                });
+                
                 appState[detectedId] = {
                     loaded: true,
-                    headers: headers,
-                    rows: results.data,
+                    headers: normalizedHeaders,
+                    rows: normalizedRows,
                     cellErrors: {},
                     autocorrectedCells: {},
                     hasValidated: false
@@ -863,8 +1246,11 @@ function renderTable() {
                 // ── DATE PICKER ── Convert MM/DD/YYYY to YYYY-MM-DD for the input, display back
                 let dateVal = '';
                 let clean = String(displayVal).replace(/^'+/, '').trim();
-                if (/^\d{2}\/\d{2}\/\d{4}$/.test(clean)) {
-                    let [m,d,y] = clean.split('/');
+                let dObj = new Date(clean);
+                if (!isNaN(dObj.getTime())) {
+                    let m = String(dObj.getMonth() + 1).padStart(2, '0');
+                    let d = String(dObj.getDate()).padStart(2, '0');
+                    let y = dObj.getFullYear();
                     dateVal = `${y}-${m}-${d}`;
                 }
                 cellHtml = `<input type="date" class="${cls}" data-row="${rIdx}" data-col="${key}" value="${dateVal}">`;
@@ -986,19 +1372,31 @@ function showTooltip(input) {
 }
 function hideTooltip() { tipEl.style.display = 'none'; }
 
+function parseRobustDate(val) {
+    if (!val) return null;
+    let clean = String(val).replace(/^'+/, '').trim();
+    if (!clean) return null;
+    let dObj = new Date(clean);
+    if (/^\d{4,5}$/.test(clean)) {
+        let serial = parseInt(clean);
+        dObj = new Date(Date.UTC(1899, 11, 30 + serial));
+    } else if (/^\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4}$/.test(clean)) {
+        let parts = clean.split(/[\/\-]/);
+        let p1 = parseInt(parts[0]), p2 = parseInt(parts[1]), y = parseInt(parts[2]);
+        if (p1 > 12) dObj = new Date(y, p2 - 1, p1);
+        else dObj = new Date(y, p1 - 1, p2);
+    }
+    if (isNaN(dObj.getTime())) return null;
+    let y = dObj.getFullYear();
+    if (y < 1900 || y > 2100) return null;
+    return dObj;
+}
+
 function formatDate(raw) {
-  if (!raw || !raw.trim()) return '';
-  let s = raw.trim().replace(/^'+/, '');
-  let formatted = '';
-  if (/^\d{2}\/\d{2}\/\d{4}$/.test(s)) {
-      formatted = s;
-  } else {
-      let d = new Date(s);
-      if (isNaN(d.getTime())) return raw;
-      formatted = String(d.getMonth()+1).padStart(2,'0') + '/' + String(d.getDate()).padStart(2,'0') + '/' + d.getFullYear();
-  }
-  if (formatted.startsWith('0')) return "'" + formatted;
-  return formatted;
+  let dObj = parseRobustDate(raw);
+  if (!dObj) return raw;
+  let formatted = String(dObj.getMonth()+1).padStart(2,'0') + '/' + String(dObj.getDate()).padStart(2,'0') + '/' + dObj.getFullYear();
+  return "'" + formatted;
 }
 
 function customValidateRow(tableId, row, errs, seenLists) {

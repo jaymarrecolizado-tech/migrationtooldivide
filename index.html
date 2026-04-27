@@ -1081,7 +1081,14 @@ document.getElementById('exportBtn').addEventListener('click', () => {
     let out = {};
     st.headers.forEach(h => {
       let v = String(r[h] || '').trim();
-      if (v.startsWith('0') && !/^\d+$/.test(v)) v = "'" + v;
+      
+      // Force text formatting for Excel to prevent scientific notation or dropping leading zeros
+      if (v && /^\d+$/.test(v)) {
+          if (h === 'cellphone_no' || h === 'telephone_no' || h === 'tin_no' || v.length > 10 || v.startsWith('0')) {
+              v = "'" + v;
+          }
+      }
+      
       out[h] = v;
     });
     return out;

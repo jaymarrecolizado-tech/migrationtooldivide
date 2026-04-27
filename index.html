@@ -644,7 +644,7 @@ function renderTable() {
                 if (key === 'tin_no') maxLen = '15';     // 999-999-999-999
                 if (key === 'pin_no') maxLen = '17';     // 000-00-000-00-000
                 if (key === 'tdn_no') maxLen = '20';     // alphanumeric, free format
-                if (key === 'bin' || key === 'business_bin') maxLen = '19';
+                if (key === 'bin' || key === 'business_bin') maxLen = '20'; // 7-4-7 + 2 dashes
                 if (rule.numeric && !maxLen) maxLen = '20';
                 let htmlAttr = maxLen ? ` maxlength="${maxLen}"` : '';
                 cellHtml = `<input type="text" class="${cls}" data-row="${rIdx}" data-col="${key}" value="${escapeHtml(displayVal)}"${htmlAttr}>`;

@@ -1001,23 +1001,19 @@ document.getElementById('exportBtn').addEventListener('click', () => {
       }
   }
 
-  let dateFields = schemas[activeTableId].DATE_FIELDS || [];
-
   let finalRows = st.rows.map(r => {
     if(!r) return null;
     let out = {};
     st.headers.forEach(h => {
       let v = String(r[h] || '').trim();
-      
-      // Strip Excel text-force prefix (') before writing to CSV
+
+      // Strip leading quote prefix (used internally for Excel display) — export raw value for PHP
       if (v.startsWith("'")) v = v.substring(1);
-      
-      // For date fields: use Excel formula ="value" to lock as text and preserve leading zeros (e.g. 04/14/2028)
-      // PHP importers reading raw CSV should strip the ="..." wrapper. Clean value is inside.
-      if (dateFields.includes(h) && v) {
-          v = `="${v}"`;
-      }
-      
+
+      // Date fields: export as plain m/d/Y (e.g. 04/14/2028) — matches PHP DateTime::createFromFormat('m/d/Y')
+      // NOTE: Do NOT re-wrap with ="..." — that breaks PHP's CSV date parser.
+      // Excel may reformat dates on open, but the raw CSV file on disk is always correct for PHP import.
+
       out[h] = v;
     });
     return out;

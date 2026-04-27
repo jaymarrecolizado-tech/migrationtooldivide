@@ -226,6 +226,9 @@ function customValidateRow(tableId, row, errs, seenLists) {
         let bin = g('bin');
         if (bin && !/^\d{7}-\d{4}-\d{7}$/.test(bin)) errs.bin = 'Format: PSGC7-YEAR4-INC7';
         
+        let cell = g('cellphone_no');
+        if (cell && !/^639\d{9}$/.test(cell)) errs.cellphone_no = 'Must be 12 digits starting with 639';
+        
         let bt = g('business_type');
         if (bt === 'SOLE PROPRIETORSHIP') {
             if (!g('dti_no')) errs.dti_no = 'Required for SOLE PROPRIETORSHIP';

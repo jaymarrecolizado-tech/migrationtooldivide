@@ -1,0 +1,2 @@
+﻿business_bin,application_type,application_date,year,qtr_from,qtr_to,amount,discount,surcharge,interest,total,issued_date,valid_until,or_no,or_date,permit_no,barangay_clearance_number,business_plate_number,mode_of_payment
+0201514-2025-0000303,R,04/27/2026,2026,1,4,9800,0,0,0,9800,01/01/2026,12/31/2026,U12345611,01/01/2026,2026-0111,ABC-111,1,MANUAL

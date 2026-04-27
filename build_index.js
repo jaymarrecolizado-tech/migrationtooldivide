@@ -1,4 +1,17 @@
-<!DOCTYPE html>
+const fs = require('fs');
+
+const backup = fs.readFileSync('index.html.backup', 'utf8');
+
+// Extract schemas
+const schemaStart = backup.indexOf('const schemas = {');
+let schemaEnd = backup.indexOf('};\n\n// Apply saved rules', schemaStart);
+if (schemaEnd === -1) schemaEnd = backup.indexOf('};\r\n', schemaStart);
+if (schemaEnd === -1) schemaEnd = backup.indexOf('};\n', schemaStart);
+if (schemaEnd === -1) schemaEnd = backup.indexOf('};', schemaStart);
+
+const schemasCode = backup.substring(schemaStart, schemaEnd + 2);
+
+const newHtml = `<!DOCTYPE html>
 <html lang="en" data-theme="light">
 <head>
 <meta charset="UTF-8">
@@ -237,212 +250,7 @@ textarea.json-editor{width:100%;height:400px;font-family:monospace;font-size:13p
 
 <script>
 // --- SCHEMAS INJECTED HERE ---
-const schemas = {
-  table1: {
-    RULES: {
-  bin: { required: true, label: 'BIN' },
-  business_name: { required: true, label: 'Business Name', min: 3, max: 100 },
-  trade_name: { required: false, label: 'Trade Name', min: 3, max: 100 },
-  business_type: {
-    required: true, label: 'Business Type',
-    allowed: ['SOLE PROPRIETORSHIP','ONE PERSON CORPORATION','PARTNERSHIP','CORPORATION','COOPERATIVE']
-  },
-  dti_no: { required: false, conditional: true, label: 'DTI No.', min: 3, max: 30 },
-  dti_registratrion_expiry_date: { required: false, conditional: true, label: 'DTI Expiry Date' },
-  sec_no: { required: false, conditional: true, label: 'SEC No.', min: 3, max: 30 },
-  cda_no: { required: false, conditional: true, label: 'CDA No.', min: 3, max: 30 },
-  tin_no: { required: false, label: 'TIN No.' },
-  email_address: { required: true, label: 'Email Address', min: 3, max: 100 },
-  cellphone_no: { required: true, label: 'Cellphone No.' },
-  telephone_no: { required: false, label: 'Telephone No.', min: 3, max: 20 },
-  incharge_first_name: { required: true, label: 'First Name', min: 3, max: 100 },
-  incharge_middle_name: { required: false, label: 'Middle Name', min: 3, max: 100 },
-  incharge_last_name: { required: true, label: 'Last Name', min: 3, max: 100 },
-  incharge_extension_name: { required: false, label: 'Ext. Name', min: 3, max: 100 },
-  incharge_sex: { required: true, label: 'Sex', allowed: ['M','F'] },
-  incharge_country_of_citizenship: { required: true, label: 'Citizenship', min: 3, max: 100 },
-  incharge_street: { required: false, label: 'Incharge Street', min: 3, max: 100 },
-  incharge_barangay: { required: true, label: 'Incharge Barangay', min: 3, max: 100 },
-  incharge_municipality: { required: true, label: 'Incharge Municipality', min: 3, max: 100 },
-  incharge_province: { required: true, label: 'Incharge Province', min: 3, max: 100 },
-  office_street: { required: false, label: 'Office Street', min: 3, max: 100 },
-  office_barangay_code: { required: true, label: 'Office Brgy Code' },
-  location_owned: { required: true, label: 'Location Owned', allowed: ['0', '1'] },
-  tdn_no: { required: false, conditional: true, label: 'TDN No.', min: 3, max: 20 },
-  pin_no: { required: false, conditional: true, label: 'PIN No.', min: 3, max: 20 },
-  lessor_name: { required: false, conditional: true, label: 'Lessor Name', min: 3, max: 150 },
-  monthly_rental: { required: false, conditional: true, label: 'Monthly Rental', numeric: true },
-  area: { required: true, label: 'Area', numeric: true },
-  no_of_male_employees: { required: true, label: 'Male Employees', numeric: true },
-  no_of_female_employees: { required: true, label: 'Female Employees', numeric: true },
-  no_of_employees_residing_within_the_area: { required: true, label: 'Residing Employees', numeric: true },
-  no_of_van: { required: true, label: 'Vans', numeric: true },
-  no_of_truck: { required: true, label: 'Trucks', numeric: true },
-  no_of_motorcycle: { required: true, label: 'Motorcycles', numeric: true },
-  activity_type: { required: true, label: 'Activity Type', min: 3, max: 100 }
-},
-    HINTS: {
-  bin: { rule: 'BIN Format: PSGC7-YEAR4-INC7', fix: 'Use format: 7-digit PSGC code + dash + 4-digit year + dash + 7-digit increment. Example: 1400101-2024-0000001' },
-  business_name: { rule: 'Required, 3-100 characters', fix: 'Enter the full registered business name. Must be at least 3 characters, max 100.' },
-  trade_name: { rule: 'Optional, 3-100 characters if provided', fix: 'Leave blank or enter a trade/brand name between 3-100 characters.' },
-  business_type: { rule: 'Must be one of 5 allowed types', fix: 'Use exactly: SOLE PROPRIETORSHIP, ONE PERSON CORPORATION, PARTNERSHIP, CORPORATION, or COOPERATIVE' },
-  dti_no: { rule: 'Required if SOLE PROPRIETORSHIP', fix: 'Enter DTI registration number (3-30 chars). Required when Business Type is SOLE PROPRIETORSHIP.' },
-  dti_registratrion_expiry_date: { rule: 'Required if SOLE PROPRIETORSHIP, format MM/DD/YYYY', fix: 'Enter date as MM/DD/YYYY. Example: 12/31/2025. Required when Business Type is SOLE PROPRIETORSHIP.' },
-  sec_no: { rule: 'Required for OPC/PARTNERSHIP/CORPORATION', fix: 'Enter SEC registration number (3-30 chars). Required when Business Type is ONE PERSON CORPORATION, PARTNERSHIP, or CORPORATION.' },
-  cda_no: { rule: 'Required if COOPERATIVE', fix: 'Enter CDA registration number (3-30 chars). Required when Business Type is COOPERATIVE.' },
-  tin_no: { rule: 'Optional, numbers and dashes only', fix: 'Enter TIN using digits and dashes only. Example: 123-456-789' },
-  email_address: { rule: 'Required, valid email format', fix: 'Enter a valid email address. Example: business@email.com. Spaces are not allowed.' },
-  cellphone_no: { rule: 'Required, 12 digits starting with 639', fix: 'Enter as 639xxxxxxxxx (12 digits). The system auto-converts 09xx and 9xx formats.' },
-  telephone_no: { rule: 'Optional, 3-20 characters', fix: 'Leave blank or enter landline number between 3-20 characters.' },
-  incharge_first_name: { rule: 'Required, min 3 characters', fix: 'Enter the first name of the person in charge (at least 3 characters).' },
-  incharge_middle_name: { rule: 'Optional, min 3 characters if provided', fix: 'Leave blank or enter middle name (at least 3 characters).' },
-  incharge_last_name: { rule: 'Required, min 3 characters', fix: 'Enter the last name/surname of the person in charge (at least 3 characters).' },
-  incharge_extension_name: { rule: 'Optional, min 3 characters if provided', fix: 'Leave blank or enter extension like JR, SR, III. Periods are auto-removed.' },
-  incharge_sex: { rule: 'Required, must be M or F', fix: 'Enter M for Male or F for Female. The system auto-converts MALE/FEMALE.' },
-  incharge_country_of_citizenship: { rule: 'Required, min 3 characters', fix: 'Enter country of citizenship. Example: Filipino, American, Chinese' },
-  incharge_street: { rule: 'Optional, min 3 characters if provided', fix: 'Leave blank or enter street address (at least 3 characters).' },
-  incharge_barangay: { rule: 'Required, min 3 characters', fix: 'Enter the barangay of the person in charge (at least 3 characters).' },
-  incharge_municipality: { rule: 'Required, min 3 characters', fix: 'Enter the municipality/city of the person in charge (at least 3 characters).' },
-  incharge_province: { rule: 'Required, min 3 characters', fix: 'Enter the province of the person in charge (at least 3 characters).' },
-  office_street: { rule: 'Optional, min 3 characters if provided', fix: 'Leave blank or enter office street address (at least 3 characters).' },
-  office_barangay_code: { rule: 'Required', fix: 'Enter the PSGC barangay code for the business office location.' },
-  location_owned: { rule: 'Required, must be 1 (owned) or 0 (rented)', fix: 'Enter 1 if the business location is owned, or 0 if rented. Auto-converts: yes/true/owned → 1, no/false/rented → 0.' },
-  tdn_no: { rule: 'Required for owned (location_owned=1), 3-20 chars', fix: 'Enter Tax Declaration Number. Required when location is owned, unless PIN is provided.' },
-  pin_no: { rule: 'Required for owned (location_owned=1), 3-20 chars', fix: 'Enter Property Identification Number. Required when location is owned, unless TDN is provided.' },
-  lessor_name: { rule: 'Required for rented (location_owned=0), 3-150 chars', fix: 'Enter the name of the lessor/property owner. Required when location is rented.' },
-  monthly_rental: { rule: 'Required for rented (location_owned=0), non-negative number', fix: 'Enter the monthly rental amount as a whole number. Required when location is rented.' },
-  area: { rule: 'Required, non-negative number', fix: 'Enter the business area in square meters as a whole number.' },
-  no_of_male_employees: { rule: 'Required, non-negative number', fix: 'Enter the count of male employees (whole number, 0 or more).' },
-  no_of_female_employees: { rule: 'Required, non-negative number', fix: 'Enter the count of female employees (whole number, 0 or more).' },
-  no_of_employees_residing_within_the_area: { rule: 'Required, cannot exceed total employees', fix: 'Enter count of employees residing in the business area. Must not exceed Male + Female employees combined.' },
-  no_of_van: { rule: 'Required, non-negative number', fix: 'Enter the number of vans owned/used by the business (whole number, 0 or more).' },
-  no_of_truck: { rule: 'Required, non-negative number', fix: 'Enter the number of trucks owned/used by the business (whole number, 0 or more).' },
-  no_of_motorcycle: { rule: 'Required, non-negative number', fix: 'Enter the number of motorcycles owned/used by the business (whole number, 0 or more).' },
-  activity_type: { rule: 'Required, min 3 characters', fix: 'Enter the type of business activity. Example: Retail, Wholesale, Manufacturing, Food Service' }
-},
-    FIELD_ORDER: [
-  'bin','business_name','trade_name','business_type',
-  'dti_no','dti_registratrion_expiry_date','sec_no','cda_no','tin_no',
-  'email_address','cellphone_no','telephone_no',
-  'incharge_first_name','incharge_middle_name','incharge_last_name','incharge_extension_name',
-  'incharge_sex','incharge_country_of_citizenship','incharge_street',
-  'incharge_barangay','incharge_municipality','incharge_province',
-  'office_street','office_barangay_code','location_owned',
-  'tdn_no','pin_no','lessor_name','monthly_rental',
-  'area','no_of_male_employees','no_of_female_employees',
-  'no_of_employees_residing_within_the_area',
-  'no_of_van','no_of_truck','no_of_motorcycle','activity_type'
-],
-    DATE_FIELDS: ['dti_registratrion_expiry_date']
-  },
-  table2: {
-    RULES: {
-  bin: { required: true, label: 'BIN' },
-  business_line_code: { required: true, label: 'Business Line Code', numeric: true },
-  capital_amount: { required: true, label: 'Capital Amount', numeric: true },
-  gross_amount: { required: true, label: 'Gross Amount', numeric: true },
-  gross_amount_essential: { required: true, label: 'Gross Essential', numeric: true },
-  gross_amount_nonessential: { required: true, label: 'Gross Non-Essential', numeric: true },
-  retired_date: { required: false, label: 'Retired Date' }
-},
-    HINTS: {
-  bin: { rule: 'BIN Format: PSGC7-YEAR4-INC7', fix: 'Use format: 7-digit PSGC code + dash + 4-digit year + dash + 7-digit increment. Example: 1400101-2024-0000001' },
-  business_line_code: { rule: 'Required, numeric', fix: 'Enter a numeric business line code. Must exist in system.' },
-  capital_amount: { rule: 'Required, number', fix: 'Enter capital amount as a number. Use 0 if not applicable.' },
-  gross_amount: { rule: 'Required, number', fix: 'Enter gross amount as a number. Must not be blank.' },
-  gross_amount_essential: { rule: 'Required, number', fix: 'Enter essential gross amount as a number. Must not be blank.' },
-  gross_amount_nonessential: { rule: 'Required, number', fix: 'Enter nonessential gross amount as a number. Must not be blank.' },
-  retired_date: { rule: 'Optional, MM/DD/YYYY', fix: 'Enter date as MM/DD/YYYY. Example: 12/31/2025. Leave blank if not applicable.' }
-},
-    FIELD_ORDER: ['bin','business_line_code','capital_amount','gross_amount','gross_amount_essential','gross_amount_nonessential','retired_date'],
-    DATE_FIELDS: ['retired_date']
-  },
-  table3: {
-    RULES: {
-  business_bin: { required: true, label: 'Business BIN' },
-  application_type: { required: true, label: 'App. Type', allowed: ['N','R','Q'] },
-  application_date: { required: true, label: 'App. Date' },
-  year: { required: true, label: 'Year' },
-  qtr_from: { required: false, label: 'Qtr From', allowed: ['1','2','3','4'] },
-  qtr_to: { required: false, label: 'Qtr To', allowed: ['1','2','3','4'] },
-  amount: { required: true, label: 'Amount', numeric: true },
-  discount: { required: true, label: 'Discount', numeric: true },
-  surcharge: { required: true, label: 'Surcharge', numeric: true },
-  interest: { required: true, label: 'Interest', numeric: true },
-  total: { required: true, label: 'Total', numeric: true },
-  issued_date: { required: true, label: 'Issued Date' },
-  valid_until: { required: true, label: 'Valid Until' },
-  or_no: { required: true, label: 'OR No.' },
-  or_date: { required: true, label: 'OR Date' },
-  permit_no: { required: false, label: 'Permit No.' },
-  barangay_clearance_number: { required: false, label: 'Brgy Clearance No.' },
-  business_plate_number: { required: false, label: 'Plate No.' },
-  mode_of_payment: { required: true, label: 'Payment Mode', allowed: ['ONLINE','MANUAL'] }
-},
-    HINTS: {
-  business_bin: { rule: 'BIN Format: PSGC7-YEAR4-INC7', fix: 'Use format: 7-digit PSGC code + dash + 4-digit year + dash + 7-digit increment. Example: 1400101-2024-0000001' },
-  application_type: { rule: 'Must be N, R, or Q', fix: 'Enter N for NEW, R for RENEWAL, or Q for QUARTERLY. Spaces are auto-stripped, case auto-uppercased.' },
-  application_date: { rule: 'Required, format MM/DD/YYYY', fix: 'Enter date as MM/DD/YYYY. Example: 01/20/2024. Various date formats are auto-converted.' },
-  year: { rule: 'Required, 4-digit year (1900-2100)', fix: 'Enter a 4-digit year. Example: 2024. Must be between 1900 and 2100.' },
-  qtr_from: { rule: 'Optional, must be 1, 2, 3, or 4', fix: 'Enter a quarter number (1-4). Leave blank if not applicable.' },
-  qtr_to: { rule: 'Optional, must be 1-4 and >= Qtr From', fix: 'Enter a quarter number (1-4). Must be greater than or equal to Qtr From if both are provided.' },
-  amount: { rule: 'Required, non-negative number (decimals allowed)', fix: 'Enter the base amount as a number. Non-numeric characters are auto-stripped.' },
-  discount: { rule: 'Required, non-negative number (decimals allowed)', fix: 'Enter the discount amount as a number. Non-numeric characters are auto-stripped.' },
-  surcharge: { rule: 'Required, non-negative number (decimals allowed)', fix: 'Enter the surcharge amount as a number. Non-numeric characters are auto-stripped.' },
-  interest: { rule: 'Required, non-negative number (decimals allowed)', fix: 'Enter the interest amount as a number. Non-numeric characters are auto-stripped.' },
-  total: { rule: 'Required, must equal Amount + Surcharge + Interest - Discount', fix: 'Must equal amount + surcharge + interest - discount. Auto-corrected if blank or wrong when other numeric fields are valid.' },
-  issued_date: { rule: 'Required, format MM/DD/YYYY', fix: 'Enter the issue date as MM/DD/YYYY. Example: 01/20/2024.' },
-  valid_until: { rule: 'Required, format MM/DD/YYYY, must be >= Issued Date', fix: 'Enter the expiration date as MM/DD/YYYY. Must be on or after the Issued Date.' },
-  or_no: { rule: 'Required, alphanumeric, must be unique', fix: 'Enter a unique Official Receipt number (alphanumeric). Example: U12345678. Duplicates are flagged.' },
-  or_date: { rule: 'Required, format MM/DD/YYYY', fix: 'Enter the OR date as MM/DD/YYYY. Example: 01/20/2024.' },
-  permit_no: { rule: 'Optional, alphanumeric if provided', fix: 'Leave blank or enter the permit number (alphanumeric). Example: A-0001.' },
-  barangay_clearance_number: { rule: 'Optional, alphanumeric if provided', fix: 'Leave blank or enter the barangay clearance number (alphanumeric). Example: ABC-123.' },
-  business_plate_number: { rule: 'Optional, alphanumeric if provided', fix: 'Leave blank or enter the business plate number (alphanumeric). Example: AA-0001.' },
-  mode_of_payment: { rule: 'Must be ONLINE or MANUAL', fix: 'Enter ONLINE or MANUAL. Case auto-uppercased. Example: ONLINE.' }
-},
-    FIELD_ORDER: [
-  'business_bin','application_type','application_date','year','qtr_from','qtr_to',
-  'amount','discount','surcharge','interest','total',
-  'issued_date','valid_until','or_no','or_date',
-  'permit_no','barangay_clearance_number','business_plate_number','mode_of_payment'
-],
-    DATE_FIELDS: ['application_date','issued_date','valid_until','or_date']
-  },
-  table4: {
-    RULES: {
-  business_bin: { required: true, label: 'Business BIN' },
-  application_or_no: { required: true, label: 'OR No.' },
-  code: { required: true, label: 'Fee Code', min: 2, max: 20 },
-  description: { required: true, label: 'Description', min: 2, max: 100 },
-  amount: { required: true, label: 'Amount', numeric: true },
-  discount: { required: true, label: 'Discount', numeric: true },
-  Interest: { required: true, label: 'Interest', numeric: true },
-  Surcharge: { required: true, label: 'Surcharge', numeric: true },
-  total: { required: true, label: 'Total', numeric: true },
-  type: { required: true, label: 'Fee Type', allowed: ['LICENSE','PERMIT','SANITARY','GARBAGE','FIXED','OTHER'] },
-  qtr_from: { required: true, label: 'Qtr From', allowed: ['1','2','3','4'] },
-  qtr_to: { required: true, label: 'Qtr To', allowed: ['1','2','3','4'] },
-  year: { required: true, label: 'Year' }
-},
-    HINTS: {
-  business_bin: { rule: 'BIN Format: PSGC7-YEAR4-INC7', fix: 'Use format: 7-digit PSGC code + dash + 4-digit year + dash + 7-digit increment. Example: 0300801-2024-0000001' },
-  application_or_no: { rule: 'Required, non-empty alphanumeric', fix: 'Enter the application OR number. Must be a non-empty alphanumeric string. Example: U12345678' },
-  code: { rule: 'Required, 2-20 alphanumeric characters', fix: 'Enter the fee code (2-20 chars). Spaces will be auto-stripped. Example: GF-01' },
-  description: { rule: 'Required, 2-100 characters', fix: 'Enter a fee description between 2 and 100 characters. Example: Garbage Fee' },
-  amount: { rule: 'Required, non-negative number', fix: 'Enter the fee amount as a number >= 0. Non-numeric characters will be stripped.' },
-  discount: { rule: 'Required, non-negative number', fix: 'Enter the discount as a number >= 0. Default is 0 if none.' },
-  Interest: { rule: 'Required, non-negative number', fix: 'Enter the interest as a number >= 0. Default is 0 if none.' },
-  Surcharge: { rule: 'Required, non-negative number', fix: 'Enter the surcharge as a number >= 0. Default is 0 if none.' },
-  total: { rule: 'Required, must equal Amount + Surcharge + Interest - Discount', fix: 'Total is auto-calculated. If blank or wrong, auto-correct will fix it. Formula: amount + Surcharge + Interest - discount.' },
-  type: { rule: 'Must be one of: LICENSE, PERMIT, SANITARY, GARBAGE, FIXED, OTHER', fix: 'Enter the fee type. Will be auto-uppercased. Allowed: LICENSE, PERMIT, SANITARY, GARBAGE, FIXED, OTHER.' },
-  qtr_from: { rule: 'Required, must be 1, 2, 3, or 4', fix: 'Enter the starting quarter (1, 2, 3, or 4).' },
-  qtr_to: { rule: 'Required, must be 1-4 and >= Qtr From', fix: 'Enter the ending quarter (1, 2, 3, or 4). Must be greater than or equal to Qtr From.' },
-  year: { rule: 'Required, 4-digit year (1900-2100)', fix: 'Enter a 4-digit year between 1900 and 2100. Example: 2024' }
-},
-    FIELD_ORDER: ['business_bin','application_or_no','code','description','amount','discount','Interest','Surcharge','total','type','qtr_from','qtr_to','year'],
-    DATE_FIELDS: []
-  }
-};
+${schemasCode}
 
 // --- STATE MANAGEMENT ---
 let MasterStore = { validBINs: new Set() };
@@ -492,10 +300,10 @@ document.getElementById('csvFile').addEventListener('change', (e) => {
                     hasValidated: false
                 };
                 
-                let tab = document.querySelector(`.tab[data-target="${detectedId}"]`);
+                let tab = document.querySelector(\`.tab[data-target="\${detectedId}"]\`);
                 tab.classList.remove('disabled');
                 
-                auditLog.push({table: detectedId, row: 'System', type: 'INFO', message: `Loaded ${results.data.length} rows.`});
+                auditLog.push({table: detectedId, row: 'System', type: 'INFO', message: \`Loaded \${results.data.length} rows.\`});
                 
                 filesProcessed++;
                 if (filesProcessed === files.length) {
@@ -521,7 +329,7 @@ document.querySelectorAll('.tab').forEach(t => {
 
 function switchTab(tableId) {
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-    document.querySelector(`.tab[data-target="${tableId}"]`).classList.add('active');
+    document.querySelector(\`.tab[data-target="\${tableId}"]\`).classList.add('active');
     activeTableId = tableId;
     currentPage = 1;
     
@@ -590,7 +398,7 @@ function renderTable() {
             else if (st.hasValidated) cls += ' cell-ok';
             let displayVal = row[key] || '';
             
-            html += `<td><input type="text" class="${cls}" data-row="${rIdx}" data-col="${key}" value="${escapeHtml(displayVal)}"></td>`;
+            html += \`<td><input type="text" class="\${cls}" data-row="\${rIdx}" data-col="\${key}" value="\${escapeHtml(displayVal)}"></td>\`;
         });
         html += '</tr>';
     }
@@ -601,7 +409,7 @@ function renderTable() {
     let pBar = document.getElementById('paginationBar');
     if (totalRows > rowsPerPage) {
         pBar.style.display = 'flex';
-        document.getElementById('pageInfo').innerText = `Page ${currentPage} of ${totalPages} (${startIdx+1}-${endIdx} of ${totalRows})`;
+        document.getElementById('pageInfo').innerText = \`Page \${currentPage} of \${totalPages} (\${startIdx+1}-\${endIdx} of \${totalRows})\`;
         document.getElementById('prevPage').disabled = currentPage === 1;
         document.getElementById('nextPage').disabled = currentPage === totalPages;
     } else {
@@ -637,10 +445,10 @@ function showTooltip(input) {
   if (!err) return;
   
   let hint = schemas[activeTableId].HINTS[k];
-  let html = `<div class="err">⚠️ ${escapeHtml(err)}</div>`;
+  let html = \`<div class="err">⚠️ \${escapeHtml(err)}</div>\`;
   if (hint) {
-    if(hint.rule) html += `<div class="rule">${escapeHtml(hint.rule)}</div>`;
-    if(hint.fix) html += `<div class="hint">Fix: ${escapeHtml(hint.fix)}</div>`;
+    if(hint.rule) html += \`<div class="rule">\${escapeHtml(hint.rule)}</div>\`;
+    if(hint.fix) html += \`<div class="hint">Fix: \${escapeHtml(hint.fix)}</div>\`;
   }
   tipEl.innerHTML = html;
   tipEl.style.display = 'block';
@@ -655,7 +463,7 @@ function formatDate(raw) {
   if (!raw || !raw.trim()) return '';
   let s = raw.trim().replace(/^'+/, '');
   let formatted = '';
-  if (/^d{2}/d{2}/d{4}$/.test(s)) {
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(s)) {
       formatted = s;
   } else {
       let d = new Date(s);
@@ -671,7 +479,7 @@ function customValidateRow(tableId, row, errs, seenLists) {
     
     if (tableId === 'table1') {
         let bin = g('bin');
-        if (bin && !/^\d{7}-\d{4}-\d{7}$/.test(bin)) errs.bin = 'Format: PSGC7-YEAR4-INC7';
+        if (bin && !/^\\d{7}-\\d{4}-\\d{7}$/.test(bin)) errs.bin = 'Format: PSGC7-YEAR4-INC7';
         
         let bt = g('business_type');
         if (bt === 'SOLE PROPRIETORSHIP') {
@@ -701,7 +509,7 @@ function customValidateRow(tableId, row, errs, seenLists) {
     else if (tableId === 'table2' || tableId === 'table3' || tableId === 'table4') {
         let binKey = tableId === 'table2' ? 'bin' : 'business_bin';
         let bin = g(binKey);
-        if (bin && !/^\d{7}-\d{4}-\d{7}$/.test(bin)) errs[binKey] = 'Format: PSGC7-YEAR4-INC7';
+        if (bin && !/^\\d{7}-\\d{4}-\\d{7}$/.test(bin)) errs[binKey] = 'Format: PSGC7-YEAR4-INC7';
         
         // CROSS-TABLE REFERENTIAL INTEGRITY
         if (appState['table1'].loaded && appState['table1'].hasValidated) {
@@ -715,28 +523,28 @@ function customValidateRow(tableId, row, errs, seenLists) {
         let qf = g('qtr_from'), qt = g('qtr_to');
         if (qf && qt && Number(qt) < Number(qf)) errs.qtr_to = 'Must be >= Qtr From';
         
-        let amtN = Number((g('amount')||'0').replace(/[^\d.\-]/g,''));
-        let surN = Number((g('surcharge')||'0').replace(/[^\d.\-]/g,''));
-        let intN = Number((g('interest')||'0').replace(/[^\d.\-]/g,''));
-        let dscN = Number((g('discount')||'0').replace(/[^\d.\-]/g,''));
+        let amtN = Number((g('amount')||'0').replace(/[^\\d.\\-]/g,''));
+        let surN = Number((g('surcharge')||'0').replace(/[^\\d.\\-]/g,''));
+        let intN = Number((g('interest')||'0').replace(/[^\\d.\\-]/g,''));
+        let dscN = Number((g('discount')||'0').replace(/[^\\d.\\-]/g,''));
         let expected = amtN + surN + intN - dscN;
         let totalVal = g('total');
-        if (totalVal !== '' && !isNaN(Number(totalVal.replace(/[^\d.\-]/g,'')))) {
-            if (Math.abs(Number(totalVal.replace(/[^\d.\-]/g,'')) - expected) > 0.01) {
+        if (totalVal !== '' && !isNaN(Number(totalVal.replace(/[^\\d.\\-]/g,'')))) {
+            if (Math.abs(Number(totalVal.replace(/[^\\d.\\-]/g,'')) - expected) > 0.01) {
                 errs.total = 'Must equal amount + surcharge + interest - discount (' + expected + ')';
             }
         }
     }
     else if (tableId === 'table4') {
-        let amtN = Number((g('amount')||'0').replace(/[^\d.\-]/g,''));
-        let surN = Number((g('Surcharge')||'0').replace(/[^\d.\-]/g,''));
-        let intN = Number((g('Interest')||'0').replace(/[^\d.\-]/g,''));
-        let dscN = Number((g('discount')||'0').replace(/[^\d.\-]/g,''));
+        let amtN = Number((g('amount')||'0').replace(/[^\\d.\\-]/g,''));
+        let surN = Number((g('Surcharge')||'0').replace(/[^\\d.\\-]/g,''));
+        let intN = Number((g('Interest')||'0').replace(/[^\\d.\\-]/g,''));
+        let dscN = Number((g('discount')||'0').replace(/[^\\d.\\-]/g,''));
         let expected = amtN + surN + intN - dscN;
         let totalVal = g('total');
-        if (totalVal !== '' && !isNaN(Number(totalVal.replace(/[^\d.\-]/g,'')))) {
+        if (totalVal !== '' && !isNaN(Number(totalVal.replace(/[^\\d.\\-]/g,'')))) {
             let expectedRounded = Math.round(expected * 100) / 100;
-            if (Math.abs(Number(totalVal.replace(/[^\d.\-]/g,'')) - expectedRounded) > 0.001) {
+            if (Math.abs(Number(totalVal.replace(/[^\\d.\\-]/g,'')) - expectedRounded) > 0.001) {
                 errs.total = 'Must equal amount + Surcharge + Interest - discount (' + expectedRounded + ')';
             }
         }
@@ -755,18 +563,18 @@ function validateSingleRow(tableId, row, rowIdx, seenLists) {
     
     if (rule.required && val === '') { errs[k] = 'Required'; return; }
     if (val !== '') {
-      if (rule.min && val.length < rule.min) errs[k] = `Min ${rule.min} chars`;
-      if (rule.max && val.length > rule.max) errs[k] = `Max ${rule.max} chars`;
-      if (rule.allowed && !rule.allowed.includes(val)) errs[k] = `Allowed: ${rule.allowed.join(', ')}`;
+      if (rule.min && val.length < rule.min) errs[k] = \`Min \${rule.min} chars\`;
+      if (rule.max && val.length > rule.max) errs[k] = \`Max \${rule.max} chars\`;
+      if (rule.allowed && !rule.allowed.includes(val)) errs[k] = \`Allowed: \${rule.allowed.join(', ')}\`;
       if (rule.numeric) {
-        if (!/^\d+(\.\d+)?$/.test(val)) {
+        if (!/^\\d+(\\.\\d+)?$/.test(val)) {
             errs[k] = 'Must be numbers only';
         }
       }
       let df = schemas[tableId].DATE_FIELDS || [];
       if (df.includes(k)) {
         let cleanVal = val.replace(/^'+/, '');
-        if (!/^\d{2}\/\d{2}\/\d{4}$/.test(cleanVal)) {
+        if (!/^\\d{2}\\/\\d{2}\\/\\d{4}$/.test(cleanVal)) {
             errs[k] = "Invalid format. Use MM/DD/YYYY";
         } else {
             let d = new Date(cleanVal);
@@ -808,7 +616,7 @@ function runLiveValidation(changedRow, changedKey, inputEl) {
   let errs = validateSingleRow(activeTableId, st.rows[changedRow], changedRow, seenLists);
   if (Object.keys(errs).length > 0) {
       st.cellErrors[changedRow] = errs;
-      auditLog.push({table: activeTableId, row: changedRow+1, type: 'ERROR', message: `${changedKey}: ${errs[changedKey]}`});
+      auditLog.push({table: activeTableId, row: changedRow+1, type: 'ERROR', message: \`\${changedKey}: \${errs[changedKey]}\`});
   } else { 
       delete st.cellErrors[changedRow]; 
   }
@@ -840,14 +648,14 @@ function processDuplicatesModal() {
         let row = st.rows[rowIdx];
         let card = document.createElement('div');
         card.className = 'dup-card';
-        let html = `<div style="font-weight:bold; margin-bottom:10px;">Row ${rowIdx+1} (${dup.keyField}: ${dup.keyValue})</div>`;
+        let html = \`<div style="font-weight:bold; margin-bottom:10px;">Row \${rowIdx+1} (\${dup.keyField}: \${dup.keyValue})</div>\`;
         
         let schema = schemas[dup.table];
         schema.FIELD_ORDER.slice(0, 8).forEach(f => {
-            if (row[f]) html += `<div class="dup-field"><strong>${f}</strong><span>${escapeHtml(row[f])}</span></div>`;
+            if (row[f]) html += \`<div class="dup-field"><strong>\${f}</strong><span>\${escapeHtml(row[f])}</span></div>\`;
         });
         
-        html += `<button class="btn btn-primary" style="margin-top:15px;width:100%;justify-content:center;">Keep This Row</button>`;
+        html += \`<button class="btn btn-primary" style="margin-top:15px;width:100%;justify-content:center;">Keep This Row</button>\`;
         card.innerHTML = html;
         
         card.querySelector('button').addEventListener('click', () => {
@@ -855,9 +663,9 @@ function processDuplicatesModal() {
             dup.indices.forEach(idx => {
                 if (idx !== rowIdx) {
                     st.rows[idx] = null; // Mark for deletion
-                    auditLog.push({table: dup.table, row: idx+1, type: 'DEDUPLICATION', message: `Discarded duplicate ${dup.keyField} ${dup.keyValue}`});
+                    auditLog.push({table: dup.table, row: idx+1, type: 'DEDUPLICATION', message: \`Discarded duplicate \${dup.keyField} \${dup.keyValue}\`});
                 } else {
-                    auditLog.push({table: dup.table, row: idx+1, type: 'DEDUPLICATION', message: `Kept record for ${dup.keyField} ${dup.keyValue}`});
+                    auditLog.push({table: dup.table, row: idx+1, type: 'DEDUPLICATION', message: \`Kept record for \${dup.keyField} \${dup.keyValue}\`});
                 }
             });
             // Compact rows
@@ -879,7 +687,7 @@ function processDuplicatesModal() {
 document.getElementById('skipDup').addEventListener('click', () => {
     document.getElementById('dupModal').style.display = 'none';
     let dup = pendingDuplicates[0];
-    auditLog.push({table: dup.table, row: 'System', type: 'DEDUPLICATION', message: `Skipped manual resolution for ${dup.keyField} ${dup.keyValue}`});
+    auditLog.push({table: dup.table, row: 'System', type: 'DEDUPLICATION', message: \`Skipped manual resolution for \${dup.keyField} \${dup.keyValue}\`});
     
     if (pendingDuplicates.length > 0) {
         processDuplicatesModal();
@@ -957,26 +765,26 @@ function updateStatusUI() {
     
     if (!st.hasValidated) {
         s.className = 'status-info';
-        s.innerHTML = `Table ${activeTableId} loaded (${st.rows.length} rows). Click Validate.`;
+        s.innerHTML = \`Table \${activeTableId} loaded (\${st.rows.length} rows). Click Validate.\`;
         sum.style.display = 'none';
     } else if (errCount === 0) {
         s.className = 'status-ok';
-        s.innerHTML = `✅ All ${st.rows.length} rows valid in ${activeTableId}. Ready for export.`;
+        s.innerHTML = \`✅ All \${st.rows.length} rows valid in \${activeTableId}. Ready for export.\`;
         sum.style.display = 'none';
     } else {
         s.className = 'status-err';
-        s.innerHTML = `❌ Found ${errCount} error(s) across ${Object.keys(st.cellErrors).length} row(s) in ${activeTableId}. Hover over red cells to see fixes.`;
+        s.innerHTML = \`❌ Found \${errCount} error(s) across \${Object.keys(st.cellErrors).length} row(s) in \${activeTableId}. Hover over red cells to see fixes.\`;
         sum.style.display = 'block';
         
-        let html = `<h4><span style="font-size:16px">⚠</span> Error Summary (${errCount})</h4>`;
+        let html = \`<h4><span style="font-size:16px">⚠</span> Error Summary (\${errCount})</h4>\`;
         let counter = 0;
         Object.entries(st.cellErrors).forEach(([r, errs]) => {
             if (counter > 50) return; // limit summary
-            let errStr = Object.entries(errs).map(([k,v]) => `<b>${k}</b>: ${v}`).join(' | ');
-            html += `<div class="err-row">Row ${(Number(r)+1)}: ${errStr}</div>`;
+            let errStr = Object.entries(errs).map(([k,v]) => \`<b>\${k}</b>: \${v}\`).join(' | ');
+            html += \`<div class="err-row">Row \${(Number(r)+1)}: \${errStr}</div>\`;
             counter++;
         });
-        if(Object.keys(st.cellErrors).length > 50) html += `<div class="err-row">...and more. Check Audit Log.</div>`;
+        if(Object.keys(st.cellErrors).length > 50) html += \`<div class="err-row">...and more. Check Audit Log.</div>\`;
         sum.innerHTML = html;
     }
 }
@@ -986,11 +794,11 @@ function customAutoCorrect(tableId, row, fixes) {
     const v = (k) => (row[k] == null ? '' : String(row[k])).trim();
     if (tableId === 'table1') {
         let bin = v('bin');
-        if (bin && bin.includes(' ')) { row.bin = bin.replace(/\s+/g, ''); fixes.push('bin: removed spaces'); }
+        if (bin && bin.includes(' ')) { row.bin = bin.replace(/\\s+/g, ''); fixes.push('bin: removed spaces'); }
         
         let cell = v('cellphone_no');
         if (cell) {
-            let digits = cell.replace(/[^\d]/g, '');
+            let digits = cell.replace(/[^\\d]/g, '');
             if (digits.startsWith('09') && digits.length === 11) { row.cellphone_no = '639' + digits.substring(2); fixes.push('cellphone_no: converted 09xx to 639xx'); }
         }
         
@@ -1000,12 +808,12 @@ function customAutoCorrect(tableId, row, fixes) {
         else if (loc !== '1' && loc !== '0' && loc !== '') { row.location_owned = ''; fixes.push('location_owned: cleared invalid'); }
     }
     if (tableId === 'table3') {
-        let amtN = Number(v('amount').replace(/[^\d.\-]/g,'') || 0);
-        let surN = Number(v('surcharge').replace(/[^\d.\-]/g,'') || 0);
-        let intN = Number(v('interest').replace(/[^\d.\-]/g,'') || 0);
-        let dscN = Number(v('discount').replace(/[^\d.\-]/g,'') || 0);
+        let amtN = Number(v('amount').replace(/[^\\d.\\-]/g,'') || 0);
+        let surN = Number(v('surcharge').replace(/[^\\d.\\-]/g,'') || 0);
+        let intN = Number(v('interest').replace(/[^\\d.\\-]/g,'') || 0);
+        let dscN = Number(v('discount').replace(/[^\\d.\\-]/g,'') || 0);
         let expectedTotal = amtN + surN + intN - dscN;
-        let currentTotal = v('total').replace(/[^\d.\-]/g,'');
+        let currentTotal = v('total').replace(/[^\\d.\\-]/g,'');
         if (!isNaN(amtN) && !isNaN(surN) && !isNaN(intN) && !isNaN(dscN)) {
             if (currentTotal === '' || Number(currentTotal) !== expectedTotal) {
                 row.total = expectedTotal.toString();
@@ -1014,12 +822,12 @@ function customAutoCorrect(tableId, row, fixes) {
         }
     }
     if (tableId === 'table4') {
-        let amtN = Number(v('amount').replace(/[^\d.\-]/g,'') || 0);
-        let surN = Number(v('Surcharge').replace(/[^\d.\-]/g,'') || 0);
-        let intN = Number(v('Interest').replace(/[^\d.\-]/g,'') || 0);
-        let dscN = Number(v('discount').replace(/[^\d.\-]/g,'') || 0);
+        let amtN = Number(v('amount').replace(/[^\\d.\\-]/g,'') || 0);
+        let surN = Number(v('Surcharge').replace(/[^\\d.\\-]/g,'') || 0);
+        let intN = Number(v('Interest').replace(/[^\\d.\\-]/g,'') || 0);
+        let dscN = Number(v('discount').replace(/[^\\d.\\-]/g,'') || 0);
         let expectedTotal = Math.round((amtN + surN + intN - dscN) * 100) / 100;
-        let currentTotal = v('total').replace(/[^\d.\-]/g,'');
+        let currentTotal = v('total').replace(/[^\\d.\\-]/g,'');
         if (!isNaN(amtN) && !isNaN(surN) && !isNaN(intN) && !isNaN(dscN)) {
             if (currentTotal === '' || Number(currentTotal) !== expectedTotal) {
                 row.total = String(expectedTotal);
@@ -1052,11 +860,11 @@ document.getElementById('autocorrectBtn').addEventListener('click', () => {
                     if (rule.allowed.includes(upper)) fixed = upper;
                 }
                 if (rule && rule.numeric && fixed) {
-                    let nStr = fixed.replace(/[^\d.\-]/g, '');
+                    let nStr = fixed.replace(/[^\\d.\\-]/g, '');
                     if (nStr !== fixed && nStr !== '') fixed = nStr;
                 }
                 if (fixed !== orig) {
-                    fixes.push(`${k}: formatted`);
+                    fixes.push(\`\${k}: formatted\`);
                     row[k] = fixed;
                 }
             });
@@ -1084,14 +892,14 @@ document.getElementById('exportBtn').addEventListener('click', () => {
     let out = {};
     st.headers.forEach(h => {
       let v = String(r[h] || '').trim();
-      if (v.startsWith('0') && !/^\d+$/.test(v)) v = "'" + v;
+      if (v.startsWith('0') && !/^\\d+$/.test(v)) v = "'" + v;
       out[h] = v;
     });
     return out;
   });
   
   let csv = Papa.unparse(finalRows, { columns: st.headers });
-  let blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+  let blob = new Blob(['\\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
   let link = document.createElement('a');
   link.href = URL.createObjectURL(blob);
   link.download = 'validated_' + activeTableId + '_' + Date.now() + '.csv';
@@ -1100,7 +908,7 @@ document.getElementById('exportBtn').addEventListener('click', () => {
 
 document.getElementById('exportAuditBtn').addEventListener('click', () => {
     let csv = Papa.unparse(auditLog, { columns: ['table', 'row', 'type', 'message'] });
-    let blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+    let blob = new Blob(['\\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
     let link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
     link.download = 'bpls_audit_log_' + Date.now() + '.csv';
@@ -1148,4 +956,7 @@ document.getElementById('resetRules').addEventListener('click', () => {
 });
 </script>
 </body>
-</html>
+</html>`;
+
+fs.writeFileSync('index.html', newHtml, 'utf8');
+console.log('Successfully rebuilt index.html');

@@ -788,17 +788,23 @@ document.getElementById('exportBtn').addEventListener('click', () => {
       }
   }
 
+  let dateFields = schemas[activeTableId].DATE_FIELDS || [];
+
   let finalRows = st.rows.map(r => {
     if(!r) return null;
     let out = {};
     st.headers.forEach(h => {
       let v = String(r[h] || '').trim();
       
-      // Strip Excel text-force prefix (') before writing to CSV - PHP importer reads raw values
+      // Strip Excel text-force prefix (') before writing to CSV
       if (v.startsWith("'")) v = v.substring(1);
       
-      // Re-add text quote only for cellphone in the Excel sense — but for CSV export, just output clean value
-      // The '639... prefix was for Excel display only; PHP needs the raw number string
+      // For date fields: use Excel formula ="value" to lock as text and preserve leading zeros (e.g. 04/14/2028)
+      // PHP importers reading raw CSV should strip the ="..." wrapper. Clean value is inside.
+      if (dateFields.includes(h) && v) {
+          v = `="${v}"`;
+      }
+      
       out[h] = v;
     });
     return out;

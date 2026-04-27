@@ -1084,7 +1084,7 @@ document.getElementById('exportBtn').addEventListener('click', () => {
       
       // Force text formatting for Excel to prevent scientific notation or dropping leading zeros
       if (v && /^\d+$/.test(v)) {
-          if (h === 'cellphone_no' || h === 'telephone_no' || h === 'tin_no' || v.length > 10 || v.startsWith('0')) {
+          if (h === 'cellphone_no' || h === 'telephone_no' || h === 'tin_no' || v.length > 10 || (v.startsWith('0') && v.length > 1)) {
               v = "'" + v;
           }
       }

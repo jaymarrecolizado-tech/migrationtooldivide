@@ -674,7 +674,7 @@ function customValidateRow(tableId, row, errs, seenLists) {
         if (bin && !/^\d{7}-\d{4}-\d{7}$/.test(bin)) errs.bin = 'Format: PSGC7-YEAR4-INC7';
         
         let cell = g('cellphone_no');
-        if (cell && !/^639\d{9}$/.test(cell)) errs.cellphone_no = 'Must be 12 digits starting with 639';
+        if (cell && !/^'?639\d{9}$/.test(cell)) errs.cellphone_no = 'Must be 12 digits starting with 639';
         
         let email = g('email_address');
         if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errs.email_address = 'Invalid email format';
@@ -1126,6 +1126,14 @@ document.getElementById('autocorrectBtn').addEventListener('click', () => {
 
 document.getElementById('exportBtn').addEventListener('click', () => {
   let st = appState[activeTableId];
+  
+  let errCount = Object.keys(st.cellErrors).reduce((acc, idx) => acc + Object.keys(st.cellErrors[idx]).length, 0);
+  if (errCount > 0) {
+      if (!confirm(`Warning: You have ${errCount} unresolved error(s) in this table.\n\nAre you sure you want to export and ignore these errors? Click OK to export anyway, or Cancel to continue correcting.`)) {
+          return;
+      }
+  }
+
   let finalRows = st.rows.map(r => {
     if(!r) return null;
     let out = {};

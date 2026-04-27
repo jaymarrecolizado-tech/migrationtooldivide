@@ -445,6 +445,7 @@ const schemas = {
 };
 
 // --- STATE MANAGEMENT ---
+// --- STATE MANAGEMENT ---
 let MasterStore = { validBINs: new Set() };
 let auditLog = []; // { table, row, type, message }
 
@@ -558,10 +559,9 @@ function renderTable() {
     }
 
     let schema = schemas[activeTableId];
-    let displayHeaders = st.headers.length ? st.headers : schema.FIELD_ORDER;
-    let orderedHeaders = [];
-    schema.FIELD_ORDER.forEach(f => { if (displayHeaders.includes(f)) orderedHeaders.push(f); });
-    displayHeaders.forEach(f => { if (!orderedHeaders.includes(f)) orderedHeaders.push(f); });
+    let orderedHeaders = [...schema.FIELD_ORDER];
+    st.headers.forEach(f => { if (!orderedHeaders.includes(f)) orderedHeaders.push(f); });
+    st.headers = orderedHeaders; // Ensure exports include the missing columns too
 
     let totalRows = st.rows.length;
     let totalPages = Math.ceil(totalRows / rowsPerPage);

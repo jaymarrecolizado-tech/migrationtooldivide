@@ -112,6 +112,9 @@ tbody tr.has-error:hover td:not(.row-num){background:var(--err-hover)}
 .cell-input.cell-err{border-color:var(--err-border);background:var(--err-bg);color:var(--err-text)}
 .cell-input.cell-ok{border-color:var(--ok-border);background:var(--ok-bg);color:var(--ok-text)}
 .cell-input.cell-autocorrected{border-color:var(--auto-border);background:var(--auto-bg);color:var(--auto-text)}
+select.cell-input{appearance:auto;cursor:pointer;min-width:120px;padding-right:4px;}
+input[type="date"].cell-input{min-width:150px;cursor:pointer;}
+td[title]:not([title=""]):hover::after{content:attr(title);position:fixed;background:#1e293b;color:#f8fafc;padding:6px 10px;border-radius:6px;font-size:12px;z-index:9999;max-width:280px;white-space:pre-wrap;box-shadow:0 4px 12px rgba(0,0,0,.3);pointer-events:none;}
 
 .pagination {display:flex; justify-content:space-between; align-items:center; margin-top:10px; background:var(--panel-bg); padding:10px 15px; border-radius:8px; border:1px solid var(--border-color);}
 
@@ -578,6 +581,8 @@ function renderTable() {
     });
     html += '</tr></thead><tbody>';
 
+    const dateFields = schema.DATE_FIELDS || [];
+
     for (let rIdx = startIdx; rIdx < endIdx; rIdx++) {
         let row = st.rows[rIdx];
         let hasErr = st.cellErrors[rIdx] && Object.keys(st.cellErrors[rIdx]).length > 0;
@@ -590,16 +595,37 @@ function renderTable() {
             else if (isAuto && st.hasValidated) cls += ' cell-autocorrected';
             else if (st.hasValidated) cls += ' cell-ok';
             let displayVal = row[key] || '';
-            
             let rule = schema.RULES[key] || {};
-            let maxLen = rule.max || '';
-            if (key === 'cellphone_no') maxLen = '13'; // 12 + optional quote
-            if (key === 'tin_no' || key === 'pin_no') maxLen = '17';
-            if (key === 'bin') maxLen = '19';
-            if (rule.numeric && !maxLen) maxLen = '20';
             
-            let htmlAttr = maxLen ? ` maxlength="${maxLen}"` : '';
-            html += `<td><input type="text" class="${cls}" data-row="${rIdx}" data-col="${key}" value="${escapeHtml(displayVal)}"${htmlAttr}></td>`;
+            let cellHtml = '';
+
+            if (rule.allowed && rule.allowed.length > 0) {
+                // ── DROPDOWN SELECT ──
+                let opts = `<option value=""></option>`;
+                rule.allowed.forEach(a => {
+                    opts += `<option value="${a}" ${displayVal === a ? 'selected' : ''}>${a}</option>`;
+                });
+                cellHtml = `<select class="${cls}" data-row="${rIdx}" data-col="${key}">${opts}</select>`;
+            } else if (dateFields.includes(key)) {
+                // ── DATE PICKER ── Convert MM/DD/YYYY to YYYY-MM-DD for the input, display back
+                let dateVal = '';
+                let clean = String(displayVal).replace(/^'+/, '').trim();
+                if (/^\d{2}\/\d{2}\/\d{4}$/.test(clean)) {
+                    let [m,d,y] = clean.split('/');
+                    dateVal = `${y}-${m}-${d}`;
+                }
+                cellHtml = `<input type="date" class="${cls}" data-row="${rIdx}" data-col="${key}" value="${dateVal}">`;
+            } else {
+                // ── MASKED TEXT INPUT ──
+                let maxLen = rule.max || '';
+                if (key === 'cellphone_no') maxLen = '13';
+                if (key === 'tin_no' || key === 'pin_no') maxLen = '17';
+                if (key === 'bin' || key === 'business_bin') maxLen = '19';
+                if (rule.numeric && !maxLen) maxLen = '20';
+                let htmlAttr = maxLen ? ` maxlength="${maxLen}"` : '';
+                cellHtml = `<input type="text" class="${cls}" data-row="${rIdx}" data-col="${key}" value="${escapeHtml(displayVal)}"${htmlAttr}>`;
+            }
+            html += `<td title="${escapeHtml(err || '')}">${cellHtml}</td>`;
         });
         html += '</tr>';
     }
@@ -617,34 +643,59 @@ function renderTable() {
         pBar.style.display = 'none';
     }
 
-    c.querySelectorAll('.cell-input').forEach(input => {
+    // ── TEXT INPUT EVENTS ──
+    c.querySelectorAll('input.cell-input').forEach(input => {
         input.addEventListener('input', e => {
             let r = parseInt(e.target.dataset.row), k = e.target.dataset.col;
             let rule = schemas[activeTableId].RULES[k] || {};
             
             // Real-time Input Masking
-            if (rule.numeric) {
-                e.target.value = e.target.value.replace(/[^\d.\-]/g, '');
-            } else if (k === 'cellphone_no') {
-                e.target.value = e.target.value.replace(/[^\d']/g, '');
-            } else if (k === 'tin_no' || k === 'pin_no' || k === 'bin') {
-                e.target.value = e.target.value.replace(/[^\d-]/g, '');
-            } else if (k === 'incharge_extension_name') {
-                e.target.value = e.target.value.replace(/\./g, '');
-            } else if (k === 'location_owned') {
-                e.target.value = e.target.value.replace(/[^01]/g, '');
+            if (e.target.type !== 'date') {
+                if (rule.numeric) {
+                    e.target.value = e.target.value.replace(/[^\d.\-]/g, '');
+                } else if (k === 'cellphone_no') {
+                    e.target.value = e.target.value.replace(/[^\d']/g, '');
+                } else if (k === 'tin_no' || k === 'pin_no' || k === 'bin' || k === 'business_bin') {
+                    e.target.value = e.target.value.replace(/[^\d\-]/g, '');
+                } else if (k === 'incharge_extension_name') {
+                    e.target.value = e.target.value.replace(/\./g, '');
+                }
             }
 
-            st.rows[r][k] = e.target.value;
+            // Date picker: convert YYYY-MM-DD → 'MM/DD/YYYY
+            if (e.target.type === 'date' && e.target.value) {
+                let [y,m,d] = e.target.value.split('-');
+                st.rows[r][k] = `'${m}/${d}/${y}`;
+            } else {
+                st.rows[r][k] = e.target.value;
+            }
             if (st.hasValidated) runLiveValidation(r, k, e.target);
         });
         input.addEventListener('change', e => {
+            // Also handle date on change
+            if (e.target.type === 'date' && e.target.value) {
+                let r = parseInt(e.target.dataset.row), k = e.target.dataset.col;
+                let [y,m,d] = e.target.value.split('-');
+                st.rows[r][k] = `'${m}/${d}/${y}`;
+            }
             if (st.hasValidated) runLiveValidation(parseInt(e.target.dataset.row), e.target.dataset.col, e.target);
         });
         input.addEventListener('mouseenter', e => showTooltip(e.target));
         input.addEventListener('mouseleave', hideTooltip);
     });
+
+    // ── SELECT DROPDOWN EVENTS ──
+    c.querySelectorAll('select.cell-input').forEach(sel => {
+        sel.addEventListener('change', e => {
+            let r = parseInt(e.target.dataset.row), k = e.target.dataset.col;
+            st.rows[r][k] = e.target.value;
+            if (st.hasValidated) runLiveValidation(r, k, e.target);
+        });
+        sel.addEventListener('mouseenter', e => showTooltip(e.target));
+        sel.addEventListener('mouseleave', hideTooltip);
+    });
 }
+
 
 document.getElementById('prevPage').addEventListener('click', () => { if(currentPage > 1) { currentPage--; renderTable(); }});
 document.getElementById('nextPage').addEventListener('click', () => { 

@@ -1020,6 +1020,16 @@ function customValidateRow(tableId, row, errs, seenLists) {
         let qf = g('qtr_from'), qt = g('qtr_to');
         if (qf && qt && Number(qt) < Number(qf)) errs.qtr_to = 'Must be >= Qtr From';
         
+        let issuedVal = g('issued_date');
+        let validVal = g('valid_until');
+        if (issuedVal && validVal) {
+            let issuedObj = parseRobustDate(issuedVal);
+            let validObj = parseRobustDate(validVal);
+            if (issuedObj && validObj && validObj < issuedObj) {
+                errs.valid_until = 'Must be on or after the Issued Date';
+            }
+        }
+        
         let amtN = Number((g('amount')||'0').replace(/[^\d.\-]/g,''));
         let surN = Number((g('surcharge')||'0').replace(/[^\d.\-]/g,''));
         let intN = Number((g('interest')||'0').replace(/[^\d.\-]/g,''));
@@ -1241,10 +1251,14 @@ function finalizeValidation(tableId) {
         let errs = validateSingleRow(tableId, row, idx, seenLists);
         if (Object.keys(errs).length > 0) {
             st.cellErrors[idx] = errs;
-        } else {
-            if (tableId === 'table1') {
-                let bin = row['bin'];
-                if (bin) MasterStore.validBINs.add(bin);
+        }
+        // Register BIN into MasterStore if the BIN field itself is valid,
+        // regardless of other field errors on the row. This prevents a bad
+        // cellphone or email from blocking cross-table BIN lookup in T2/T3/T4.
+        if (tableId === 'table1') {
+            let bin = (row['bin'] || '').trim();
+            if (bin && /^\d{7}-\d{4}-\d{7}$/.test(bin)) {
+                MasterStore.validBINs.add(bin);
             }
         }
     });
@@ -1301,9 +1315,20 @@ function customAutoCorrect(tableId, row, fixes) {
         
         let cell = v('cellphone_no');
         if (cell) {
-            let digits = cell.replace(/[^\d]/g, '');
-            if (digits.startsWith('09') && digits.length === 11) { row.cellphone_no = '639' + digits.substring(2); fixes.push('cellphone_no: converted 09xx to 639xx'); }
+            // Handle Excel scientific notation: 6.39E+11 → 639000000000
+            let normalized = cell;
+            if (/^\d+\.?\d*[eE][+\-]?\d+$/.test(cell)) {
+                normalized = String(Math.round(Number(cell)));
+            }
+            let digits = normalized.replace(/[^\d]/g, '');
+            if (digits.startsWith('639') && digits.length === 12) { row.cellphone_no = digits; fixes.push('cellphone_no: normalized from scientific/raw notation'); }
+            else if (digits.startsWith('09') && digits.length === 11) { row.cellphone_no = '639' + digits.substring(2); fixes.push('cellphone_no: converted 09xx to 639xx'); }
+            else if (digits.startsWith('9') && digits.length === 10) { row.cellphone_no = '639' + digits.substring(1); fixes.push('cellphone_no: converted 9xx to 639xx'); }
         }
+        
+        let sex = v('incharge_sex').toUpperCase();
+        if (sex === 'MALE') { row.incharge_sex = 'M'; fixes.push('incharge_sex: converted MALE to M'); }
+        else if (sex === 'FEMALE') { row.incharge_sex = 'F'; fixes.push('incharge_sex: converted FEMALE to F'); }
         
         let loc = v('location_owned').toLowerCase();
         if (['yes', 'true', 'owned', '1.0'].includes(loc)) { row.location_owned = '1'; fixes.push('location_owned: converted to 1'); }
@@ -1346,6 +1371,11 @@ function customAutoCorrect(tableId, row, fixes) {
         });
     }
     if (tableId === 'table3') {
+        let appType = v('application_type').toUpperCase();
+        if (appType === 'NEW') { row.application_type = 'N'; fixes.push('application_type: converted NEW to N'); }
+        else if (appType === 'RENEWAL') { row.application_type = 'R'; fixes.push('application_type: converted RENEWAL to R'); }
+        else if (appType === 'QUARTERLY') { row.application_type = 'Q'; fixes.push('application_type: converted QUARTERLY to Q'); }
+
         let amtN = Number(v('amount').replace(/[^\d.\-]/g,'') || 0);
         let surN = Number(v('surcharge').replace(/[^\d.\-]/g,'') || 0);
         let intN = Number(v('interest').replace(/[^\d.\-]/g,'') || 0);
@@ -1360,6 +1390,24 @@ function customAutoCorrect(tableId, row, fixes) {
         }
     }
     if (tableId === 'table4') {
+        let code = v('code');
+        if (code && code.includes(' ')) {
+            row.code = code.replace(/\s+/g, '');
+            fixes.push('code: removed spaces');
+        }
+
+        // Strip Excel comma-formatting from all numeric fields (e.g. "4,000.00" → "4000.00")
+        ['amount','discount','Interest','Surcharge','total'].forEach(f => {
+            let raw = v(f);
+            if (raw && raw.includes(',')) {
+                let stripped = raw.replace(/,/g, '');
+                if (!isNaN(Number(stripped))) {
+                    row[f] = stripped;
+                    fixes.push(f + ': removed comma formatting');
+                }
+            }
+        });
+
         let amtN = Number(v('amount').replace(/[^\d.\-]/g,'') || 0);
         let surN = Number(v('Surcharge').replace(/[^\d.\-]/g,'') || 0);
         let intN = Number(v('Interest').replace(/[^\d.\-]/g,'') || 0);

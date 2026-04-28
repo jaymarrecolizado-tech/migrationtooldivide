@@ -926,17 +926,25 @@ function formatDate(raw) {
   return "'" + formatted;
 }
 
+function normalizeBIN(raw) {
+    if (!raw) return null;
+    let bin = String(raw).trim().replace(/^['"]+/, '').replace(/['"]+$/, '');
+    bin = bin.replace(/[–—−]/g, '-').replace(/\s+/g, '');
+    if (/^\d{7}-\d{4}-\d{7}$/.test(bin)) return bin;
+    return null;
+}
+
 function customValidateRow(tableId, row, errs, seenLists) {
     const g = (k) => (row[k] == null ? '' : String(row[k])).trim();
     
     if (tableId === 'table1') {
         let bin = g('bin');
         if (bin) {
-            if (!/^\d{7}-\d{4}-\d{7}$/.test(bin)) {
+            let normBin = normalizeBIN(bin);
+            if (!normBin) {
                 errs.bin = 'Format: PSGC7-YEAR4-INC7  e.g. 0201514-2025-0000001';
             } else if (selectedLGU) {
-                // PSGC prefix check against selected LGU
-                let actualPrefix = bin.substring(0, 7);
+                let actualPrefix = normBin.substring(0, 7);
                 if (actualPrefix !== selectedLGU.psgcPrefix) {
                     errs.bin = `PSGC mismatch: expected ${selectedLGU.psgcPrefix} (${selectedLGU.municipality}, ${selectedLGU.provinceLabel}), got ${actualPrefix}`;
                 }
@@ -987,10 +995,11 @@ function customValidateRow(tableId, row, errs, seenLists) {
         let binKey = tableId === 'table2' ? 'bin' : 'business_bin';
         let bin = g(binKey);
         if (bin) {
-            if (!/^\d{7}-\d{4}-\d{7}$/.test(bin)) {
+            let normBin = normalizeBIN(bin);
+            if (!normBin) {
                 errs[binKey] = 'Format: PSGC7-YEAR4-INC7  e.g. 0201514-2025-0000001';
             } else if (selectedLGU) {
-                let actualPrefix = bin.substring(0, 7);
+                let actualPrefix = normBin.substring(0, 7);
                 if (actualPrefix !== selectedLGU.psgcPrefix) {
                     errs[binKey] = `PSGC mismatch: expected ${selectedLGU.psgcPrefix} (${selectedLGU.municipality})  got ${actualPrefix}`;
                 }
@@ -999,7 +1008,8 @@ function customValidateRow(tableId, row, errs, seenLists) {
         
         // CROSS-TABLE REFERENTIAL INTEGRITY
         if (appState['table1'].loaded && appState['table1'].hasValidated) {
-            if (bin && !MasterStore.validBINs.has(bin)) {
+            let normBin = normalizeBIN(bin);
+            if (normBin && !MasterStore.validBINs.has(normBin)) {
                 errs[binKey] = 'BIN not found in Table 1 MasterStore';
             }
         }
@@ -1008,10 +1018,10 @@ function customValidateRow(tableId, row, errs, seenLists) {
     if (tableId === 'table3') {
         let appYear = Number(g('year'));
         let bin = g('business_bin');
+        let normBin3 = normalizeBIN(bin);
 
-        // Rule: application year must be GREATER than the year embedded in the BIN
-        if (bin && /^\d{7}-(\d{4})-\d{7}$/.test(bin) && appYear) {
-            let binYear = Number(bin.split('-')[1]);
+        if (normBin3 && appYear) {
+            let binYear = Number(normBin3.split('-')[1]);
             if (appYear <= binYear) {
                 errs.year = `Year (${appYear}) must be GREATER than BIN year (${binYear}). e.g. BIN is ${binYear}, so Year must be ${binYear + 1} or later.`;
             }
@@ -1252,12 +1262,9 @@ function finalizeValidation(tableId) {
         if (Object.keys(errs).length > 0) {
             st.cellErrors[idx] = errs;
         }
-        // Register BIN into MasterStore if the BIN field itself is valid,
-        // regardless of other field errors on the row. This prevents a bad
-        // cellphone or email from blocking cross-table BIN lookup in T2/T3/T4.
         if (tableId === 'table1') {
-            let bin = (row['bin'] || '').trim();
-            if (bin && /^\d{7}-\d{4}-\d{7}$/.test(bin)) {
+            let bin = normalizeBIN(row['bin']);
+            if (bin) {
                 MasterStore.validBINs.add(bin);
             }
         }

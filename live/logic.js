@@ -24,7 +24,7 @@ const REGION2_LGUS = {
         "code": "09",
         "municipalities": [
             {
-                "name": "Basco (Capital)",
+                "name": "Basco",
                 "code": "01",
                 "psgc7": "0200901"
             },
@@ -59,11 +59,6 @@ const REGION2_LGUS = {
         "label": "Cagayan",
         "code": "15",
         "municipalities": [
-            {
-                "name": "Tuguegarao City (Capital)",
-                "code": "28",
-                "psgc7": "0201528"
-            },
             {
                 "name": "Abulug",
                 "code": "01",
@@ -195,9 +190,19 @@ const REGION2_LGUS = {
                 "psgc7": "0201526"
             },
             {
-                "name": "Sua",
+                "name": "Solana",
                 "code": "27",
                 "psgc7": "0201527"
+            },
+            {
+                "name": "Tuao",
+                "code": "28",
+                "psgc7": "0201528"
+            },
+            {
+                "name": "Tuguegarao City",
+                "code": "29",
+                "psgc7": "0201529"
             }
         ]
     },
@@ -205,21 +210,6 @@ const REGION2_LGUS = {
         "label": "Isabela",
         "code": "31",
         "municipalities": [
-            {
-                "name": "Ilagan City (Capital)",
-                "code": "14",
-                "psgc7": "0203114"
-            },
-            {
-                "name": "Santiago City (Independent)",
-                "code": "35",
-                "psgc7": "0203135"
-            },
-            {
-                "name": "Cauayan City",
-                "code": "08",
-                "psgc7": "0203108"
-            },
             {
                 "name": "Alicia",
                 "code": "01",
@@ -256,29 +246,39 @@ const REGION2_LGUS = {
                 "psgc7": "0203107"
             },
             {
+                "name": "Cauayan City",
+                "code": "08",
+                "psgc7": "0203108"
+            },
+            {
                 "name": "Cordon",
                 "code": "09",
                 "psgc7": "0203109"
             },
             {
-                "name": "Delfin Albano",
+                "name": "Dinapigue",
                 "code": "10",
                 "psgc7": "0203110"
             },
             {
-                "name": "Dinapigue",
+                "name": "Divilacan",
                 "code": "11",
                 "psgc7": "0203111"
             },
             {
-                "name": "Divilacan",
+                "name": "Echague",
                 "code": "12",
                 "psgc7": "0203112"
             },
             {
-                "name": "Echague",
+                "name": "Gamu",
                 "code": "13",
                 "psgc7": "0203113"
+            },
+            {
+                "name": "Ilagan City",
+                "code": "14",
+                "psgc7": "0203114"
             },
             {
                 "name": "Jones",
@@ -296,89 +296,104 @@ const REGION2_LGUS = {
                 "psgc7": "0203117"
             },
             {
-                "name": "Mallig",
+                "name": "Delfin Albano",
                 "code": "18",
                 "psgc7": "0203118"
             },
             {
-                "name": "Naguilian",
+                "name": "Mallig",
                 "code": "19",
                 "psgc7": "0203119"
             },
             {
-                "name": "Palanan",
+                "name": "Naguilian",
                 "code": "20",
                 "psgc7": "0203120"
             },
             {
-                "name": "Quezon",
+                "name": "Palanan",
                 "code": "21",
                 "psgc7": "0203121"
             },
             {
-                "name": "Quirino",
+                "name": "Quezon",
                 "code": "22",
                 "psgc7": "0203122"
             },
             {
-                "name": "Ramon",
+                "name": "Quirino",
                 "code": "23",
                 "psgc7": "0203123"
             },
             {
-                "name": "Reina Mercedes",
+                "name": "Ramon",
                 "code": "24",
                 "psgc7": "0203124"
             },
             {
-                "name": "Roxas",
+                "name": "Reina Mercedes",
                 "code": "25",
                 "psgc7": "0203125"
             },
             {
-                "name": "San Agustin",
+                "name": "Roxas",
                 "code": "26",
                 "psgc7": "0203126"
             },
             {
-                "name": "San Guillermo",
+                "name": "San Agustin",
                 "code": "27",
                 "psgc7": "0203127"
             },
             {
-                "name": "San Isidro",
+                "name": "San Guillermo",
                 "code": "28",
                 "psgc7": "0203128"
             },
             {
-                "name": "San Mariano",
+                "name": "San Isidro",
                 "code": "29",
                 "psgc7": "0203129"
             },
             {
-                "name": "San Mateo",
+                "name": "San Manuel",
                 "code": "30",
                 "psgc7": "0203130"
             },
             {
-                "name": "San Pablo",
+                "name": "San Mariano",
                 "code": "31",
                 "psgc7": "0203131"
             },
             {
-                "name": "Santa Maria",
+                "name": "San Mateo",
                 "code": "32",
                 "psgc7": "0203132"
             },
             {
-                "name": "Santo Tomas",
+                "name": "San Pablo",
                 "code": "33",
                 "psgc7": "0203133"
             },
             {
-                "name": "Tumauini",
+                "name": "Santa Maria",
                 "code": "34",
                 "psgc7": "0203134"
+            },
+            {
+                "name": "Santiago City",
+                "code": "35",
+                "psgc7": "0203135"
+            },
+            {
+                "name": "Santo Tomas",
+                "code": "36",
+                "psgc7": "0203136"
+            },
+            {
+                "name": "Tumauini",
+                "code": "37",
+                "psgc7": "0203137"
             }
         ]
     },
@@ -386,16 +401,6 @@ const REGION2_LGUS = {
         "label": "Nueva Vizcaya",
         "code": "50",
         "municipalities": [
-            {
-                "name": "Bayombong (Capital)",
-                "code": "04",
-                "psgc7": "0205004"
-            },
-            {
-                "name": "Alfonso Castañeda",
-                "code": "15",
-                "psgc7": "0205015"
-            },
             {
                 "name": "Ambaguio",
                 "code": "01",
@@ -413,6 +418,11 @@ const REGION2_LGUS = {
             },
             {
                 "name": "Bambang",
+                "code": "04",
+                "psgc7": "0205004"
+            },
+            {
+                "name": "Bayombong",
                 "code": "05",
                 "psgc7": "0205005"
             },
@@ -442,7 +452,7 @@ const REGION2_LGUS = {
                 "psgc7": "0205010"
             },
             {
-                "name": "Quezon",
+                "name": "Alfonso Castañeda",
                 "code": "11",
                 "psgc7": "0205011"
             },
@@ -460,6 +470,11 @@ const REGION2_LGUS = {
                 "name": "Villaverde",
                 "code": "14",
                 "psgc7": "0205014"
+            },
+            {
+                "name": "Quezon",
+                "code": "15",
+                "psgc7": "0205015"
             }
         ]
     },
@@ -468,14 +483,14 @@ const REGION2_LGUS = {
         "code": "57",
         "municipalities": [
             {
-                "name": "Cabarroguis (Capital)",
-                "code": "02",
-                "psgc7": "0205702"
-            },
-            {
                 "name": "Aglipay",
                 "code": "01",
                 "psgc7": "0205701"
+            },
+            {
+                "name": "Cabarroguis",
+                "code": "02",
+                "psgc7": "0205702"
             },
             {
                 "name": "Diffun",
@@ -488,12 +503,12 @@ const REGION2_LGUS = {
                 "psgc7": "0205704"
             },
             {
-                "name": "Nagtipunan",
+                "name": "Saguday",
                 "code": "05",
                 "psgc7": "0205705"
             },
             {
-                "name": "Saguday",
+                "name": "Nagtipunan",
                 "code": "06",
                 "psgc7": "0205706"
             }

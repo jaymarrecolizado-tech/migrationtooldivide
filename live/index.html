@@ -1111,7 +1111,7 @@ document.getElementById('csvFile').addEventListener('change', (e) => {
     Array.from(files).forEach(file => {
         Papa.parse(file, {
             header: true,
-            skipEmptyLines: true,
+            skipEmptyLines: "greedy",
             complete: (results) => {
                 let headers = results.meta.fields || [];
                 let detectedId = detectTableType(headers);
@@ -1136,6 +1136,13 @@ document.getElementById('csvFile').addEventListener('change', (e) => {
                         newRow[headerMap[k] || k] = row[k];
                     });
                     return newRow;
+                }).filter(row => {
+                    // Skip rows that are entirely empty, spaces, or literal "null"s
+                    return Object.values(row).some(val => {
+                        if (val === null || val === undefined) return false;
+                        let str = String(val).trim().toLowerCase();
+                        return str !== '' && str !== 'null';
+                    });
                 });
                 
                 appState[detectedId] = {

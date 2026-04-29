@@ -1,0 +1,5 @@
+﻿business_bin,application_or_no,code,description,amount,discount,Interest,Surcharge,total,type,qtr_from,qtr_to,year
+0201529-2025-0000003,U12345678,C2-AA-S2A-02-G,"food establishments, entertainment venues",4000.00,0,0,0,4000.00,LICENSE,1,4,2026
+0201529-2025-0000003,U12345678,C3-AA-S3A-01-A1,"On business subject to graduated fixed taxes on Manufacturers, importers, producers",1000,0,0,0,1000,PERMIT,1,4,2026
+0201529-2025-0000003,U12345678,C4-AD-S4D-01-B,"For each Business, industrial or agricultural establishment",3000,0,0,0,3000,SANITARY,1,4,2026
+0201529-2025-0000003,U12345678,C5-AB-S5B-01-D,"Hotel, Apartments and Lodging  Houses and other service provider",1800.00,0,0,0,1800,GARBAGE,1,4,2026
